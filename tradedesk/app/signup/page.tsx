@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 const tradeOptions = [
   "Electrician",
@@ -10,6 +15,65 @@ const tradeOptions = [
 ];
 
 export default function SignupPage() {
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [tradeType, setTradeType] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!tradeType) {
+      setErrorMessage("Please select a trade type.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!data.user) {
+      setErrorMessage("Unable to create user account. Please try again.");
+      setIsLoading(false);
+      return;
+    }
+
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: data.user.id,
+      full_name: fullName,
+      trade_type: tradeType,
+      email,
+    });
+
+    if (profileError) {
+      setErrorMessage(profileError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    setSuccessMessage("Account created successfully. Redirecting...");
+    setIsLoading(false);
+
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 900);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800/80">
@@ -36,7 +100,7 @@ export default function SignupPage() {
             Start running your trade business with TradeDesk.
           </p>
 
-          <form className="mt-8 space-y-5">
+          <form className="mt-8 space-y-5" onSubmit={handleSignup}>
             <div>
               <label
                 htmlFor="fullName"
@@ -48,6 +112,9 @@ export default function SignupPage() {
                 id="fullName"
                 type="text"
                 placeholder="John Smith"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                required
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -63,6 +130,9 @@ export default function SignupPage() {
                 id="email"
                 type="email"
                 placeholder="you@company.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -78,6 +148,10 @@ export default function SignupPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={6}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -91,7 +165,9 @@ export default function SignupPage() {
               </label>
               <select
                 id="tradeType"
-                defaultValue=""
+                value={tradeType}
+                onChange={(event) => setTradeType(event.target.value)}
+                required
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
               >
                 <option value="" disabled>
@@ -107,11 +183,24 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              className="w-full rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+              disabled={isLoading}
+              className="w-full rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
+
+          {errorMessage ? (
+            <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          {successMessage ? (
+            <p className="mt-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+              {successMessage}
+            </p>
+          ) : null}
 
           <p className="mt-6 text-center text-sm text-slate-300">
             Already have an account?{" "}
