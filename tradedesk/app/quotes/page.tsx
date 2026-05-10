@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { generateQuotePDF, quoteRowToPdfData, type QuoteDbRow } from "../../lib/generatePDF";
 import { supabase } from "../../lib/supabase";
 
-type QuoteRow = {
+type QuoteRow = QuoteDbRow & {
   id: string;
   customer_name: string;
   total: number;
@@ -53,7 +54,9 @@ export default function QuotesPage() {
 
       const { data, error } = await supabase
         .from("quotes")
-        .select("id, customer_name, total, status, created_at")
+        .select(
+          "id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at"
+        )
         .eq("user_id", authData.user.id)
         .order("created_at", { ascending: false });
 
@@ -160,9 +163,23 @@ export default function QuotesPage() {
                               {formatDate(quote.created_at)}
                             </td>
                             <td className="px-3 py-3">
-                              <button className="rounded-full border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-slate-500">
-                                View
-                              </button>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded-full border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-slate-500"
+                                >
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    generateQuotePDF(quoteRowToPdfData(quote))
+                                  }
+                                  className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500"
+                                >
+                                  Download PDF
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
