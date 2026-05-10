@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   const features = [
     "Instant Quotes",
@@ -21,9 +23,12 @@ export default function Home() {
             </div>
             <span className="text-xl font-semibold tracking-tight">TradeDesk</span>
           </div>
-          <button className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200">
+          <Link
+            href="/signup"
+            className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+          >
             Get Started
-          </button>
+          </Link>
         </nav>
       </header>
 
@@ -38,9 +43,12 @@ export default function Home() {
             place.
           </p>
           <div className="mt-10">
-            <button className="rounded-full bg-blue-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-blue-500">
+            <Link
+              href="/signup"
+              className="rounded-full bg-blue-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+            >
               Get Started
-            </button>
+            </Link>
           </div>
         </section>
 
