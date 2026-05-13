@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { generateQuotePDF, quoteRowToPdfData, type QuoteDbRow } from "../../lib/generatePDF";
 import { supabase } from "../../lib/supabase";
@@ -16,7 +17,7 @@ type QuoteRow = QuoteDbRow & {
 const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Quotes", href: "/quotes" },
-  { label: "Invoices", href: "#" },
+  { label: "Invoices", href: "/invoices" },
   { label: "Jobs", href: "#" },
   { label: "WSIB Tracking", href: "#" },
   { label: "Settings", href: "#" },
@@ -36,9 +37,11 @@ const formatDate = (value: string) =>
   });
 
 export default function QuotesPage() {
+  const router = useRouter();
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [convertingId, setConvertingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -72,6 +75,43 @@ export default function QuotesPage() {
 
     void fetchQuotes();
   }, []);
+
+  const handleConvertToInvoice = async (quote: QuoteRow) => {
+    setErrorMessage("");
+    setConvertingId(quote.id);
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const user = authData.user;
+
+    if (authError || !user) {
+      setConvertingId(null);
+      router.push("/login");
+      return;
+    }
+
+    const { error } = await supabase.from("invoices").insert({
+      user_id: user.id,
+      customer_name: quote.customer_name ?? "",
+      customer_email: quote.customer_email,
+      customer_phone: quote.customer_phone,
+      job_description: quote.job_description,
+      line_items: quote.line_items,
+      subtotal: quote.subtotal ?? 0,
+      hst: quote.hst ?? 0,
+      total: quote.total ?? 0,
+      notes: quote.notes,
+      status: "unpaid",
+    });
+
+    setConvertingId(null);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    router.push("/invoices");
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -135,7 +175,7 @@ export default function QuotesPage() {
                 <p className="text-slate-300">Loading quotes...</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[680px] text-left text-sm">
+                  <table className="w-full min-w-[880px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-800 text-slate-300">
                         <th className="px-3 py-3 font-medium">Customer Name</th>
@@ -178,6 +218,14 @@ export default function QuotesPage() {
                                   className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500"
                                 >
                                   Download PDF
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={convertingId === quote.id}
+                                  onClick={() => void handleConvertToInvoice(quote)}
+                                  className="rounded-full border border-amber-600/60 bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {convertingId === quote.id ? "Converting..." : "Convert to Invoice"}
                                 </button>
                               </div>
                             </td>
