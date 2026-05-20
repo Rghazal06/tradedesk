@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase";
+import { useEffect, useMemo, useState } from "react";
 
 type LineItem = {
   id: number;
@@ -43,6 +44,15 @@ const formatCurrency = (value: number) =>
 
 export default function NewQuotePage() {
   const router = useRouter();
+  useEffect(() => {
+  async function checkAuth() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push('/login'); return; }
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+    if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
+  }
+  checkAuth();
+}, []);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -52,6 +62,7 @@ export default function NewQuotePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [userName, setUserName] = useState('Contractor');
 
   const subtotal = useMemo(
     () => lineItems.reduce((sum, item) => sum + lineItemTotal(item), 0),
@@ -161,7 +172,7 @@ export default function NewQuotePage() {
           <header className="border-b border-slate-800">
             <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
               <h1 className="text-2xl font-semibold tracking-tight">
-                Welcome back, Contractor
+                Welcome back, {userName}
               </h1>
               <button className="w-full rounded-full border border-slate-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-slate-500 sm:w-auto">
                 Logout
