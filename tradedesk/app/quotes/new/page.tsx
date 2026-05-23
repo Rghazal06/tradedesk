@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 
@@ -60,6 +59,8 @@ export default function NewQuotePage() {
   const [quoteNotes, setQuoteNotes] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([createEmptyLineItem(1)]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [tradeType, setTradeType] = useState('');
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [userName, setUserName] = useState('Contractor');
@@ -91,6 +92,38 @@ export default function NewQuotePage() {
       return filtered.length > 0 ? filtered : [createEmptyLineItem(Date.now())];
     });
   };
+
+  const handleAIGenerate = async () => {
+  if (!jobDescription) {
+    setErrorMessage('Please enter a job description first so AI knows what to quote.');
+    return;
+  }
+  setIsGenerating(true);
+  setErrorMessage('');
+  try {
+    const res = await fetch('/api/ai-quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobDescription, tradeType }),
+    });
+    const data = await res.json();
+    if (data.error) { setErrorMessage(data.error); return; }
+    if (data.line_items) {
+      setLineItems(data.line_items.map((item: any, index: number) => ({
+        id: Date.now() + index,
+        description: item.description,
+        quantity: String(item.quantity),
+        unitPrice: String(item.unit_price),
+      })));
+    }
+    if (data.notes) setQuoteNotes(data.notes);
+    setSuccessMessage('AI generated your quote! Review and adjust before sending.');
+  } catch (error) {
+    setErrorMessage('AI generation failed. Please try again.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const handleSaveQuote = async () => {
     setErrorMessage("");
@@ -227,6 +260,41 @@ export default function NewQuotePage() {
                 <div className="md:col-span-2">
                   <label className="mb-2 block text-sm font-medium text-slate-300">
                     Job Description
+
+                    <div className="md:col-span-2 flex gap-3 items-end">
+  <div className="flex-1">
+    <label className="mb-2 block text-sm font-medium text-slate-300">
+      Trade Type (for AI)
+    </label>
+    <select
+      value={tradeType}
+      onChange={e => setTradeType(e.target.value)}
+      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white">
+      <option value="">Select your trade</option>
+      {['Electrician', 'Plumber', 'HVAC', 'General Contractor', 'Roofer', 'Other'].map(t => (
+        <option key={t} value={t}>{t}</option>
+      ))}
+    </select>
+  </div>
+  <button
+    type="button"
+    onClick={handleAIGenerate}
+    disabled={isGenerating}
+    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-semibold text-sm disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+    {isGenerating ? (
+      <>
+        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        AI Generating...
+      </>
+    ) : (
+      <>✨ Generate with AI</>
+    )}
+  </button>
+</div>
+
                   </label>
                   <textarea
                     value={jobDescription}
