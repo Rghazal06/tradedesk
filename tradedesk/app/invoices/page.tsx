@@ -338,6 +338,30 @@ export default function InvoicesPage() {
                                             ? "Updating..."
                                             : "Mark as Paid"}
                                         </button>
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            const res = await fetch('/api/send-invoice-reminder', {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({
+                                                customerEmail: invoice.customer_email,
+                                                customerName: invoice.customer_name,
+                                                invoiceTotal: invoice.total?.toFixed(2),
+                                                invoiceId: invoice.id,
+                                                contractorName: 'TradeDesk Contractor',
+                                                contractorPhone: '',
+                                                paymentLink: invoice.payment_link || '',
+                                              })
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) alert('Reminder sent!');
+                                            else alert('Error: ' + data.error);
+                                          }}
+                                          className="rounded-full border border-yellow-600/60 bg-yellow-600/15 px-3 py-1.5 text-xs font-semibold text-yellow-300 transition hover:bg-yellow-600/25"
+                                        >
+                                          Send Reminder
+                                        </button>
                                       </>
                                     ) : null}
                                   </div>
