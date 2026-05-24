@@ -99,7 +99,7 @@ export default function JobsPage() {
           </div>
         </div>
         <nav className="p-4 flex-1">
-          {[['Dashboard', '/dashboard'], ['Quotes', '/quotes'], ['Invoices', '/invoices'], ['Jobs', '/jobs'], ['WSIB Tracking', '/wsib'], ['Settings', '/settings']].map(([label, href]) => (
+          {[['Dashboard', '/dashboard'], ['Quotes', '/quotes'], ['Invoices', '/invoices'], ['Jobs', '/jobs'], ['WSIB Tracking', '/wsib'], ['AI Profit Analyzer', '/profit'], ['Settings', '/settings']].map(([label, href]) => (
             <a key={href} href={href} className={`block px-4 py-2.5 rounded-lg mb-1 text-sm font-medium transition-colors ${href === '/jobs' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>{label}</a>
           ))}
         </nav>

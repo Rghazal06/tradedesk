@@ -14,11 +14,12 @@ type LineItem = {
 
 const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Quotes", href: "/quotes/new" },
-  { label: "Invoices", href: "#" },
-  { label: "Jobs", href: "#" },
-  { label: "WSIB Tracking", href: "#" },
-  { label: "Settings", href: "#" },
+  { label: "Quotes", href: "/quotes" },
+  { label: "Invoices", href: "/invoices" },
+  { label: "Jobs", href: "/jobs" },
+  { label: "WSIB Tracking", href: "/wsib" },
+  { label: "AI Profit Analyzer", href: "/profit" },
+  { label: "Settings", href: "/settings" },
 ];
 
 const createEmptyLineItem = (id: number): LineItem => ({

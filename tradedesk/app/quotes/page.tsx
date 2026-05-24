@@ -18,9 +18,10 @@ const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Quotes", href: "/quotes" },
   { label: "Invoices", href: "/invoices" },
-  { label: "Jobs", href: "#" },
-  { label: "WSIB Tracking", href: "#" },
-  { label: "Settings", href: "#" },
+  { label: "Jobs", href: "/jobs" },
+  { label: "WSIB Tracking", href: "/wsib" },
+  { label: "AI Profit Analyzer", href: "/profit" },
+  { label: "Settings", href: "/settings" },
 ];
 
 const formatCurrency = (value: number) =>
