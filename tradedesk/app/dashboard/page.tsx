@@ -1,251 +1,196 @@
-import Link from "next/link";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const NAV_ITEMS = [
+  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
+  { label: 'Appointments', href: '/appointments', icon: '📅' },
+  { label: 'Quotes', href: '/quotes', icon: '📋' },
+  { label: 'Invoices', href: '/invoices', icon: '🧾' },
+  { label: 'Jobs', href: '/jobs', icon: '🔧' },
+  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
+  { label: 'AI Profit Analyzer', href: '/profit', icon: '🤖' },
+  { label: 'Settings', href: '/settings', icon: '⚙️' },
+];
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState({ quotes: 0, unpaidInvoices: 0, activeJobs: 0, revenue: 0 });
+  const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { loadDashboard(); }, []);
+
+  async function loadDashboard() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push('/login'); return; }
+
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+    if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
+
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    const [quotes, invoices, jobs, paidInvoices, recentQ] = await Promise.all([
+      supabase.from('quotes').select('id').eq('user_id', user.id).gte('created_at', firstOfMonth),
+      supabase.from('invoices').select('id').eq('user_id', user.id).eq('status', 'unpaid'),
+      supabase.from('jobs').select('id').eq('user_id', user.id).in('status', ['scheduled', 'in progress']),
+      supabase.from('invoices').select('total').eq('user_id', user.id).eq('status', 'paid').gte('created_at', firstOfMonth),
+      supabase.from('quotes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+    ]);
+
+    const revenue = paidInvoices.data?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
+    setStats({
+      quotes: quotes.data?.length || 0,
+      unpaidInvoices: invoices.data?.length || 0,
+      activeJobs: jobs.data?.length || 0,
+      revenue,
+    });
+    setRecentQuotes(recentQ.data || []);
+    setLoading(false);
+  }
+
   return (
-    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: 'white', color: '#1a1a1a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       
-      {/* Navbar */}
-      <nav style={{ borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'white', zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
-          <span style={{ fontWeight: '700', fontSize: '18px', color: '#111' }}>TradeDesk</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          <a href="#features" style={{ color: '#4b5563', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Features</a>
-          <a href="#pricing" style={{ color: '#4b5563', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Pricing</a>
-          <a href="#why" style={{ color: '#4b5563', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Why TradeDesk</a>
-          <Link href="/login" style={{ color: '#4b5563', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Log In</Link>
-          <Link href="/signup" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>Start Free Trial</Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section style={{ padding: '80px 48px 60px', maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }}>
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '6px 14px', marginBottom: '24px' }}>
-            <span style={{ width: '6px', height: '6px', background: '#16a34a', borderRadius: '50%', display: 'inline-block' }}></span>
-            <span style={{ color: '#15803d', fontSize: '13px', fontWeight: '600' }}>Built exclusively for Ontario contractors</span>
-          </div>
-          <h1 style={{ fontSize: '52px', fontWeight: '800', lineHeight: '1.1', color: '#111', margin: '0 0 24px', letterSpacing: '-1.5px' }}>
-            Run your trade business from your phone
-          </h1>
-          <p style={{ fontSize: '18px', color: '#4b5563', lineHeight: '1.7', margin: '0 0 36px' }}>
-            The only business software built specifically for Ontario contractors. Quote faster, get paid sooner, track WSIB automatically — all in one place.
-          </p>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <Link href="/signup" style={{ background: '#16a34a', color: 'white', padding: '14px 28px', borderRadius: '10px', fontSize: '16px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 4px 14px rgba(22,163,74,0.3)' }}>
-              Start Free Trial
-            </Link>
-            <Link href="/login" style={{ color: '#374151', padding: '14px 28px', borderRadius: '10px', fontSize: '16px', fontWeight: '600', textDecoration: 'none', border: '1px solid #e5e7eb' }}>
-              Log In →
-            </Link>
-          </div>
-          <p style={{ color: '#9ca3af', fontSize: '13px', marginTop: '16px' }}>No credit card required. 14-day free trial.</p>
-
-          {/* Social proof */}
-          <div style={{ display: 'flex', gap: '32px', marginTop: '48px', paddingTop: '32px', borderTop: '1px solid #f3f4f6' }}>
-            {[
-              { value: '100+', label: 'Ontario contractors' },
-              { value: '4.9★', label: 'Average rating' },
-              { value: '$0', label: 'Setup cost' },
-            ].map(stat => (
-              <div key={stat.label}>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#111' }}>{stat.value}</div>
-                <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* App Preview */}
-        <div style={{ position: 'relative' }}>
-          <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '20px', padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.08)' }}>
-            {/* Mock dashboard */}
-            <div style={{ background: 'white', borderRadius: '12px', padding: '20px', marginBottom: '12px', border: '1px solid #f3f4f6' }}>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Revenue This Month</div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#16a34a' }}>$12,450</div>
-              <div style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px' }}>↑ 23% from last month</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-              {[
-                { label: 'Active Jobs', value: '8', color: '#3b82f6' },
-                { label: 'Unpaid Invoices', value: '3', color: '#f59e0b' },
-              ].map(card => (
-                <div key={card.label} style={{ background: 'white', borderRadius: '10px', padding: '16px', border: '1px solid #f3f4f6' }}>
-                  <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{card.label}</div>
-                  <div style={{ fontSize: '24px', fontWeight: '800', color: card.color, marginTop: '4px' }}>{card.value}</div>
-                </div>
-              ))}
-            </div>
-            {/* AI Quote */}
-            <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '14px', border: '1px solid #bbf7d0' }}>
-              <div style={{ fontSize: '11px', color: '#15803d', fontWeight: '700', marginBottom: '6px' }}>✨ AI Generated Quote</div>
-              <div style={{ fontSize: '13px', color: '#374151' }}>Bathroom renovation — 3 line items</div>
-              <div style={{ fontSize: '16px', fontWeight: '800', color: '#111', marginTop: '4px' }}>$4,520.00 + HST</div>
-            </div>
-          </div>
-
-          {/* Floating cards */}
-          <div style={{ position: 'absolute', top: '-20px', right: '-20px', background: 'white', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
-            <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>WSIB Filing</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#16a34a', marginTop: '2px' }}>✓ On time</div>
-          </div>
-          <div style={{ position: 'absolute', bottom: '-16px', left: '-16px', background: 'white', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
-            <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>Invoice Paid</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#111', marginTop: '2px' }}>$2,260 received 💰</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trusted by */}
-      <section style={{ background: '#f9fafb', padding: '32px 48px', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ color: '#9ca3af', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '24px' }}>Trusted by Ontario trades professionals</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
-            {['⚡ Electricians', '🔧 Plumbers', '❄️ HVAC', '🏠 General Contractors', '🏗️ Roofers'].map(trade => (
-              <span key={trade} style={{ color: '#4b5563', fontSize: '15px', fontWeight: '600' }}>{trade}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why TradeDesk */}
-      <section id="why" style={{ padding: '80px 48px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <h2 style={{ fontSize: '38px', fontWeight: '800', color: '#111', margin: '0 0 16px', letterSpacing: '-1px' }}>Why Ontario contractors choose TradeDesk</h2>
-          <p style={{ color: '#6b7280', fontSize: '18px', maxWidth: '560px', margin: '0 auto', lineHeight: '1.6' }}>Every US tool ignores Ontario regulations. We built TradeDesk specifically for you.</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-          {[
-            { icon: '🛡️', title: 'WSIB Tracking Built In', desc: 'Automatically track reportable earnings, calculate premiums, and never miss a filing deadline. No US tool does this.', highlight: 'Ontario exclusive' },
-            { icon: '🏛️', title: 'HST Auto-Calculated', desc: 'Every quote and invoice automatically calculates 13% Ontario HST. Your CRA filings become simple.', highlight: 'Ontario exclusive' },
-            { icon: '✨', title: 'AI Quote Generator', desc: 'Describe any job in plain English. Our AI instantly generates professional line items with Ontario market rates.', highlight: 'Saves 2+ hours/week' },
-            { icon: '💳', title: 'Get Paid by E-Transfer', desc: 'Customers approve quotes and pay invoices online. No more chasing payments by phone.', highlight: 'Avg 3x faster payment' },
-            { icon: '📱', title: 'Works From Your Phone', desc: 'Create quotes on the job site, invoice from your truck. TradeDesk works everywhere you work.', highlight: 'Mobile first' },
-            { icon: '🤖', title: 'AI Profit Analyzer', desc: 'Every month, AI analyzes your business and tells you exactly how to make more money.', highlight: 'Unique to TradeDesk' },
-          ].map(feature => (
-            <div key={feature.title} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '28px', transition: 'all 0.2s' }}>
-              <span style={{ fontSize: '32px', display: 'block', marginBottom: '16px' }}>{feature.icon}</span>
-              <div style={{ display: 'inline-block', background: '#f0fdf4', color: '#15803d', fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '100px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{feature.highlight}</div>
-              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#111', margin: '0 0 10px' }}>{feature.title}</h3>
-              <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>{feature.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" style={{ background: '#f9fafb', padding: '80px 48px', borderTop: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <h2 style={{ fontSize: '38px', fontWeight: '800', color: '#111', margin: '0 0 16px', letterSpacing: '-1px' }}>Everything you need, nothing you don't</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-            {[
-              { icon: '📋', title: 'Smart Quotes', desc: 'AI-powered quotes in seconds' },
-              { icon: '🧾', title: 'Invoicing', desc: 'One-click from quote to invoice' },
-              { icon: '💰', title: 'Online Payments', desc: 'Stripe-powered payment links' },
-              { icon: '🛡️', title: 'WSIB Tracking', desc: 'Ontario compliance automated' },
-              { icon: '📅', title: 'Job Scheduling', desc: 'Manage your crew calendar' },
-              { icon: '⭐', title: 'Review Requests', desc: 'Auto SMS after job completion' },
-              { icon: '🔗', title: 'Customer Portal', desc: 'Clients approve quotes online' },
-              { icon: '🤖', title: 'AI Analyzer', desc: 'Monthly business insights' },
-            ].map(f => (
-              <div key={f.title} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e5e7eb' }}>
-                <span style={{ fontSize: '24px', display: 'block', marginBottom: '10px' }}>{f.icon}</span>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: '#111', marginBottom: '4px' }}>{f.title}</div>
-                <div style={{ fontSize: '12px', color: '#6b7280' }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section style={{ padding: '80px 48px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <h2 style={{ fontSize: '38px', fontWeight: '800', color: '#111', margin: '0 0 16px', letterSpacing: '-1px' }}>Ontario contractors love TradeDesk</h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-          {[
-            { name: 'Mike T.', trade: 'Electrician, London ON', quote: 'I used to spend 3 hours every Sunday doing quotes and invoices. Now it takes 20 minutes. The WSIB tracking alone is worth every penny.' },
-            { name: 'Sarah K.', trade: 'HVAC Contractor, Hamilton ON', quote: 'The AI quote generator is insane. I describe the job and it gives me professional line items with the right Ontario rates. My customers think I have a whole office team.' },
-            { name: 'Dave R.', trade: 'General Contractor, Ottawa ON', quote: 'Finally a tool that understands HST and WSIB. Every other app I tried was built for American contractors. TradeDesk actually gets Ontario.' },
-          ].map(t => (
-            <div key={t.name} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '28px' }}>
-              <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-                {'★★★★★'.split('').map((s, i) => <span key={i} style={{ color: '#f59e0b', fontSize: '16px' }}>{s}</span>)}
-              </div>
-              <p style={{ color: '#374151', fontSize: '15px', lineHeight: '1.7', margin: '0 0 20px', fontStyle: 'italic' }}>"{t.quote}"</p>
-              <div>
-                <div style={{ fontWeight: '700', color: '#111', fontSize: '14px' }}>{t.name}</div>
-                <div style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px' }}>{t.trade}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" style={{ background: '#f9fafb', padding: '80px 48px', borderTop: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <h2 style={{ fontSize: '38px', fontWeight: '800', color: '#111', margin: '0 0 16px', letterSpacing: '-1px' }}>Simple, transparent pricing</h2>
-            <p style={{ color: '#6b7280', fontSize: '18px' }}>No hidden fees. Cancel anytime.</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            {[
-              { name: 'Starter', price: '$99', period: '/month', desc: 'Perfect for solo contractors', features: ['Unlimited quotes & invoices', 'AI quote generator', 'WSIB tracking', 'Stripe payment links', 'Customer portal', 'Invoice reminders'], cta: 'Start Free Trial', highlighted: false },
-              { name: 'Pro', price: '$199', period: '/month', desc: 'For growing trades businesses', features: ['Everything in Starter', 'AI Profit Analyzer', 'SMS review requests', 'Job scheduling & crew', 'Apprenticeship tracking', 'Priority support'], cta: 'Start Free Trial', highlighted: true },
-            ].map(plan => (
-              <div key={plan.name} style={{ background: plan.highlighted ? '#16a34a' : 'white', border: plan.highlighted ? 'none' : '1px solid #e5e7eb', borderRadius: '20px', padding: '36px', position: 'relative' }}>
-                {plan.highlighted && <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: '#fbbf24', color: '#92400e', fontSize: '11px', fontWeight: '800', padding: '4px 16px', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>Most Popular</div>}
-                <div style={{ fontSize: '16px', fontWeight: '700', color: plan.highlighted ? 'rgba(255,255,255,0.8)' : '#6b7280', marginBottom: '8px' }}>{plan.name}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '48px', fontWeight: '800', color: plan.highlighted ? 'white' : '#111', letterSpacing: '-2px' }}>{plan.price}</span>
-                  <span style={{ color: plan.highlighted ? 'rgba(255,255,255,0.6)' : '#6b7280', fontSize: '16px' }}>{plan.period}</span>
-                </div>
-                <p style={{ color: plan.highlighted ? 'rgba(255,255,255,0.7)' : '#6b7280', fontSize: '14px', marginBottom: '28px' }}>{plan.desc}</p>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px' }}>
-                  {plan.features.map(f => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: plan.highlighted ? 'rgba(255,255,255,0.9)' : '#374151', fontSize: '14px' }}>
-                      <span style={{ color: plan.highlighted ? '#bbf7d0' : '#16a34a', fontWeight: '700' }}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" style={{ display: 'block', textAlign: 'center', background: plan.highlighted ? 'white' : '#16a34a', color: plan.highlighted ? '#16a34a' : 'white', padding: '14px', borderRadius: '10px', fontWeight: '700', fontSize: '15px', textDecoration: 'none' }}>{plan.cta}</Link>
-              </div>
-            ))}
-          </div>
-          <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '13px', marginTop: '24px' }}>14-day free trial · No credit card required · Cancel anytime</p>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section style={{ padding: '80px 48px', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '42px', fontWeight: '800', color: '#111', margin: '0 0 20px', letterSpacing: '-1.5px', lineHeight: '1.1' }}>Ready to run a better trade business?</h2>
-        <p style={{ color: '#6b7280', fontSize: '18px', marginBottom: '36px', lineHeight: '1.6' }}>Join Ontario contractors who quote faster, get paid sooner, and stress less about paperwork.</p>
-        <Link href="/signup" style={{ display: 'inline-block', background: '#16a34a', color: 'white', padding: '16px 36px', borderRadius: '12px', fontSize: '18px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 8px 24px rgba(22,163,74,0.3)' }}>
-          Start Your Free Trial Today
-        </Link>
-        <p style={{ color: '#9ca3af', fontSize: '13px', marginTop: '16px' }}>No credit card required · Setup in 5 minutes</p>
-      </section>
-
-      {/* Footer */}
-      <footer style={{ borderTop: '1px solid #e5e7eb', padding: '40px 48px', background: '#f9fafb' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Sidebar */}
+      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '28px', height: '28px', background: '#16a34a', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '11px' }}>TD</div>
-            <span style={{ fontWeight: '700', color: '#111', fontSize: '15px' }}>TradeDesk</span>
-          </div>
-          <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>© 2026 TradeDesk. Built for Ontario contractors.</p>
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <Link href="/login" style={{ color: '#6b7280', fontSize: '13px', textDecoration: 'none' }}>Log In</Link>
-            <Link href="/signup" style={{ color: '#6b7280', fontSize: '13px', textDecoration: 'none' }}>Sign Up</Link>
+            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
           </div>
         </div>
-      </footer>
+        <nav style={{ padding: '12px', flex: 1 }}>
+          {NAV_ITEMS.map(item => {
+            const isActive = item.href === '/dashboard';
+            return (
+              <a key={item.href} href={item.href} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
+                textDecoration: 'none', fontSize: '13.5px',
+                fontWeight: isActive ? '600' : '400',
+                color: isActive ? '#16a34a' : '#6b7280',
+                background: isActive ? '#f0fdf4' : 'transparent',
+                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
+              }}>
+                <span>{item.icon}</span>{item.label}
+              </a>
+            );
+          })}
+        </nav>
+        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
+            Logout
+          </button>
+        </div>
+      </div>
 
+      {/* Main */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        
+        {/* Top bar */}
+        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>
+              {userName ? `Welcome back, ${userName} 👋` : 'Dashboard'}
+            </h1>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Here's what's happening with your business</p>
+          </div>
+          <a href="/quotes/new" style={{
+            padding: '10px 20px', background: '#16a34a', color: 'white',
+            borderRadius: '8px', fontWeight: '600', fontSize: '14px',
+            textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+          }}>+ New Quote</a>
+        </div>
+
+        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+          {loading ? (
+            <div style={{ color: '#9ca3af', textAlign: 'center', paddingTop: '80px' }}>Loading...</div>
+          ) : (
+            <>
+              {/* Stat Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+                {[
+                  { label: 'Quotes This Month', value: stats.quotes, color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe', icon: '📋' },
+                  { label: 'Unpaid Invoices', value: stats.unpaidInvoices, color: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: '⚠️' },
+                  { label: 'Active Jobs', value: stats.activeJobs, color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe', icon: '🔧' },
+                  { label: 'Revenue This Month', value: `$${stats.revenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: '💰' },
+                ].map(stat => (
+                  <div key={stat.label} style={{ background: stat.bg, border: `1px solid ${stat.border}`, borderRadius: '12px', padding: '20px' }}>
+                    <div style={{ fontSize: '20px', marginBottom: '8px' }}>{stat.icon}</div>
+                    <p style={{ color: '#6b7280', fontSize: '12px', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>{stat.label}</p>
+                    <p style={{ color: stat.color, fontSize: '26px', fontWeight: '800', margin: 0 }}>{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick Actions */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '32px' }}>
+                {[
+                  { label: 'New Quote', href: '/quotes/new', icon: '✨', desc: 'AI-powered' },
+                  { label: 'Appointments', href: '/appointments', icon: '📅', desc: 'Schedule jobs' },
+                  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️', desc: 'Ontario compliance' },
+                  { label: 'AI Analyzer', href: '/profit', icon: '🤖', desc: 'Business insights' },
+                ].map(action => (
+                  <a key={action.href} href={action.href} style={{
+                    background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px',
+                    padding: '16px', textDecoration: 'none', display: 'block',
+                  }}>
+                    <span style={{ fontSize: '22px', display: 'block', marginBottom: '6px' }}>{action.icon}</span>
+                    <p style={{ color: '#111', fontSize: '13px', fontWeight: '600', margin: '0 0 2px' }}>{action.label}</p>
+                    <p style={{ color: '#9ca3af', fontSize: '11px', margin: 0 }}>{action.desc}</p>
+                  </a>
+                ))}
+              </div>
+
+              {/* Recent Quotes */}
+              <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>Recent Quotes</h2>
+                  <a href="/quotes" style={{ color: '#16a34a', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>View all →</a>
+                </div>
+                {recentQuotes.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+                    No quotes yet. <a href="/quotes/new" style={{ color: '#16a34a' }}>Create your first quote</a>
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        {['Customer', 'Total', 'Date', 'Action'].map(h => (
+                          <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentQuotes.map(quote => (
+                        <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                          <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{quote.customer_name || '—'}</td>
+                          <td style={{ padding: '14px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>${quote.total?.toFixed(2)}</td>
+                          <td style={{ padding: '14px 24px', color: '#6b7280', fontSize: '13px' }}>{new Date(quote.created_at).toLocaleDateString('en-CA')}</td>
+                          <td style={{ padding: '14px 24px' }}>
+                            <a href="/quotes" style={{ color: '#16a34a', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>View →</a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
