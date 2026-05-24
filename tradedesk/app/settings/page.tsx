@@ -23,6 +23,7 @@ export default function SettingsPage() {
     hst_number: '',
     wsib_number: '',
     payment_terms: 'Payment due within 30 days.',
+    google_review_link: '',
   });
 
   useEffect(() => { loadProfile(); }, []);
@@ -31,7 +32,18 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (data) setProfile(prev => ({ ...prev, ...data, email: user.email || '', phone: data.phone || '', company_name: data.company_name || '', address: data.address || '', hst_number: data.hst_number || '', wsib_number: data.wsib_number || '', payment_terms: data.payment_terms || 'Payment due within 30 days.' }));
+    if (data) setProfile(prev => ({
+      ...prev,
+      ...data,
+      email: user.email || '',
+      phone: data.phone || '',
+      company_name: data.company_name || '',
+      address: data.address || '',
+      hst_number: data.hst_number || '',
+      wsib_number: data.wsib_number || '',
+      payment_terms: data.payment_terms || 'Payment due within 30 days.',
+      google_review_link: data.google_review_link || '',
+    }));
   }
 
   async function saveProfile() {
@@ -127,6 +139,11 @@ export default function SettingsPage() {
                 <label className="text-gray-400 text-sm block mb-1">Default Payment Terms</label>
                 <textarea value={profile.payment_terms} onChange={e => setProfile({...profile, payment_terms: e.target.value})} rows={2} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm resize-none"/>
               </div>
+              <div className="col-span-2">
+                <label className="text-gray-400 text-sm block mb-1">Google Review Link</label>
+                <input value={profile.google_review_link} onChange={e => setProfile({...profile, google_review_link: e.target.value})} placeholder="https://g.page/r/your-business/review" className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
+                <p className="text-gray-500 text-xs mt-1">Find this in your Google Business Profile dashboard. Sent automatically when a job is completed.</p>
+              </div>
             </div>
           </div>
 
@@ -141,42 +158,42 @@ export default function SettingsPage() {
               <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">Upgrade to Pro</button>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
-<div className="p-4 border border-gray-700 rounded-xl">
-  <p className="text-white font-semibold">Starter</p>
-  <p className="text-blue-400 text-xl font-bold mt-1">$99/month</p>
-  <p className="text-gray-400 text-sm mt-1">Quotes, Invoices, WSIB, Jobs</p>
-  <button
-    onClick={async () => {
-      const res = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: 'price_1TYyLwHtCISkRQL6TBKz9xQh', email: profile.email })
-      });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    }}
-    className="mt-3 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
-    Select Starter
-  </button>
-</div>
-<div className="p-4 border border-gray-700 rounded-xl">
-  <p className="text-white font-semibold">Pro</p>
-  <p className="text-blue-400 text-xl font-bold mt-1">$199/month</p>
-  <p className="text-gray-400 text-sm mt-1">Everything + Priority Support</p>
-  <button
-    onClick={async () => {
-      const res = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: 'price_1TYyMaHtCISkRQL6RWAB2eoo', email: profile.email })
-      });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    }}
-    className="mt-3 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
-    Select Pro
-  </button>
-</div>
+              <div className="p-4 border border-gray-700 rounded-xl">
+                <p className="text-white font-semibold">Starter</p>
+                <p className="text-blue-400 text-xl font-bold mt-1">$99/month</p>
+                <p className="text-gray-400 text-sm mt-1">Quotes, Invoices, WSIB, Jobs</p>
+                <button
+                  onClick={async () => {
+                    const res = await fetch('/api/create-checkout', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ priceId: 'price_1TYyLwHtCISkRQL6TBKz9xQh', email: profile.email })
+                    });
+                    const { url } = await res.json();
+                    if (url) window.location.href = url;
+                  }}
+                  className="mt-3 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                  Select Starter
+                </button>
+              </div>
+              <div className="p-4 border border-gray-700 rounded-xl">
+                <p className="text-white font-semibold">Pro</p>
+                <p className="text-blue-400 text-xl font-bold mt-1">$199/month</p>
+                <p className="text-gray-400 text-sm mt-1">Everything + Priority Support</p>
+                <button
+                  onClick={async () => {
+                    const res = await fetch('/api/create-checkout', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ priceId: 'price_1TYyMaHtCISkRQL6RWAB2eoo', email: profile.email })
+                    });
+                    const { url } = await res.json();
+                    if (url) window.location.href = url;
+                  }}
+                  className="mt-3 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                  Select Pro
+                </button>
+              </div>
             </div>
           </div>
 

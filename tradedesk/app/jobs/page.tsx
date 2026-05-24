@@ -13,6 +13,7 @@ interface Job {
   id: string;
   title: string;
   customer_name: string;
+  customer_phone: string;
   scheduled_date: string;
   status: string;
   notes: string;
@@ -24,13 +25,22 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [form, setForm] = useState({ title: '', customer_name: '', scheduled_date: '', notes: '' });
+  const [googleReviewLink, setGoogleReviewLink] = useState('');
+  const [contractorName, setContractorName] = useState('');
+  const [form, setForm] = useState({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', notes: '' });
 
   useEffect(() => { loadJobs(); }, []);
 
   async function loadJobs() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
+    
+    const { data: profile } = await supabase.from('profiles').select('google_review_link, company_name, full_name').eq('id', user.id).single();
+    if (profile) {
+      setGoogleReviewLink(profile.google_review_link || '');
+      setContractorName(profile.company_name || profile.full_name || 'Your Contractor');
+    }
+
     const { data } = await supabase.from('jobs').select('*').eq('user_id', user.id).order('scheduled_date', { ascending: true });
     setJobs(data || []);
     setLoading(false);
@@ -41,14 +51,35 @@ export default function JobsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('jobs').insert({ user_id: user.id, ...form, status: 'scheduled' });
-    if (error) { setMessage('Error: ' + error.message); } 
-    else { setMessage('Job created!'); setForm({ title: '', customer_name: '', scheduled_date: '', notes: '' }); loadJobs(); }
+    if (error) { setMessage('Error: ' + error.message); }
+    else { setMessage('Job created!'); setForm({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', notes: '' }); loadJobs(); }
     setSaving(false);
   }
 
   async function updateStatus(id: string, status: string) {
     await supabase.from('jobs').update({ status }).eq('id', id);
     loadJobs();
+  }
+
+  async function completeAndRequestReview(job: Job) {
+    await updateStatus(job.id, 'completed');
+    if (job.customer_phone) {
+      const res = await fetch('/api/send-review-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerPhone: job.customer_phone,
+          customerName: job.customer_name,
+          contractorName: contractorName,
+          googleReviewLink: googleReviewLink || 'https://g.page/r/review'
+        })
+      });
+      const data = await res.json();
+      if (data.success) setMessage('Job completed! Review request SMS sent to customer ⭐');
+      else setMessage('Job completed! SMS failed: ' + data.error);
+    } else {
+      setMessage('Job completed! Add customer phone next time to send review request.');
+    }
   }
 
   const statusColor: Record<string, string> = {
@@ -95,10 +126,14 @@ export default function JobsPage() {
                 <input value={form.customer_name} onChange={e => setForm({...form, customer_name: e.target.value})} placeholder="John Smith" className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
               </div>
               <div>
+                <label className="text-gray-400 text-sm block mb-1">Customer Phone</label>
+                <input value={form.customer_phone} onChange={e => setForm({...form, customer_phone: e.target.value})} placeholder="519-555-0000" className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
+              </div>
+              <div>
                 <label className="text-gray-400 text-sm block mb-1">Scheduled Date</label>
                 <input type="date" value={form.scheduled_date} onChange={e => setForm({...form, scheduled_date: e.target.value})} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
               </div>
-              <div>
+              <div className="col-span-2">
                 <label className="text-gray-400 text-sm block mb-1">Notes</label>
                 <input value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} placeholder="Any notes..." className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
               </div>
@@ -120,7 +155,7 @@ export default function JobsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-800">
-                      {['Job Title', 'Customer', 'Scheduled Date', 'Status', 'Actions'].map(h => (
+                      {['Job Title', 'Customer', 'Phone', 'Scheduled Date', 'Status', 'Actions'].map(h => (
                         <th key={h} className="px-6 py-3 text-left text-gray-400 text-sm font-medium">{h}</th>
                       ))}
                     </tr>
@@ -130,13 +165,22 @@ export default function JobsPage() {
                       <tr key={job.id} className="border-b border-gray-800/50 hover:bg-gray-800/20">
                         <td className="px-6 py-4 text-white text-sm font-medium">{job.title}</td>
                         <td className="px-6 py-4 text-white text-sm">{job.customer_name}</td>
+                        <td className="px-6 py-4 text-gray-400 text-sm">{job.customer_phone || '—'}</td>
                         <td className="px-6 py-4 text-white text-sm">{new Date(job.scheduled_date).toLocaleDateString('en-CA')}</td>
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[job.status] || 'bg-gray-800 text-gray-400'}`}>{job.status}</span>
                         </td>
                         <td className="px-6 py-4 flex gap-2">
-                          {job.status === 'scheduled' && <button onClick={() => updateStatus(job.id, 'in progress')} className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Start</button>}
-                          {job.status === 'in progress' && <button onClick={() => updateStatus(job.id, 'completed')} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Complete</button>}
+                          {job.status === 'scheduled' && (
+                            <button onClick={() => updateStatus(job.id, 'in progress')} className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">
+                              Start
+                            </button>
+                          )}
+                          {job.status === 'in progress' && (
+                            <button onClick={() => completeAndRequestReview(job)} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">
+                              Complete & Request Review ⭐
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
