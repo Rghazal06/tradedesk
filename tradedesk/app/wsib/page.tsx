@@ -9,6 +9,17 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const NAV_ITEMS = [
+  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
+  { label: 'Appointments', href: '/appointments', icon: '📅' },
+  { label: 'Quotes', href: '/quotes', icon: '📋' },
+  { label: 'Invoices', href: '/invoices', icon: '🧾' },
+  { label: 'Jobs', href: '/jobs', icon: '🔧' },
+  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
+  { label: 'AI Profit Analyzer', href: '/profit', icon: '🤖' },
+  { label: 'Settings', href: '/settings', icon: '⚙️' },
+];
+
 interface WSIBEntry {
   id: string;
   period_start: string;
@@ -27,32 +38,20 @@ export default function WSIBPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
-    period_start: '',
-    period_end: '',
-    reportable_earnings: '',
-    wsib_rate: '1.69',
-    due_date: '',
-    notes: '',
+    period_start: '', period_end: '', reportable_earnings: '',
+    wsib_rate: '1.69', due_date: '', notes: '',
   });
 
-  const premiumOwing = (
-    (parseFloat(form.reportable_earnings) || 0) *
-    ((parseFloat(form.wsib_rate) || 0) / 100)
-  ).toFixed(2);
+  const premiumOwing = ((parseFloat(form.reportable_earnings) || 0) * ((parseFloat(form.wsib_rate) || 0) / 100)).toFixed(2);
 
-  useEffect(() => {
-    loadEntries();
-  }, []);
+  useEffect(() => { loadEntries(); }, []);
 
   async function loadEntries() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
-    const { data } = await supabase
-      .from('wsib_entries')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('wsib_entries').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     setEntries(data || []);
     setLoading(false);
   }
@@ -62,23 +61,14 @@ export default function WSIBPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('wsib_entries').insert({
-      user_id: user.id,
-      period_start: form.period_start,
-      period_end: form.period_end,
+      user_id: user.id, ...form,
       reportable_earnings: parseFloat(form.reportable_earnings),
       wsib_rate: parseFloat(form.wsib_rate),
       premium_owing: parseFloat(premiumOwing),
-      due_date: form.due_date,
-      notes: form.notes,
       status: 'pending',
     });
-    if (error) {
-      setMessage('Error saving entry: ' + error.message);
-    } else {
-      setMessage('WSIB entry saved!');
-      setForm({ period_start: '', period_end: '', reportable_earnings: '', wsib_rate: '1.69', due_date: '', notes: '' });
-      loadEntries();
-    }
+    if (error) { setMessage('Error: ' + error.message); }
+    else { setMessage('WSIB entry saved!'); setForm({ period_start: '', period_end: '', reportable_earnings: '', wsib_rate: '1.69', due_date: '', notes: '' }); setShowForm(false); loadEntries(); }
     setSaving(false);
   }
 
@@ -93,129 +83,187 @@ export default function WSIBPage() {
   const overdue = entries.filter(e => e.status === 'pending' && new Date(e.due_date) < new Date());
 
   return (
-    <div className="flex min-h-screen bg-[#0a0f1e]">
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+
       {/* Sidebar */}
-      <div className="w-64 bg-[#0d1526] border-r border-gray-800 flex flex-col">
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">TD</div>
-            <span className="text-white font-semibold text-lg">TradeDesk</span>
+      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
           </div>
         </div>
-        <nav className="p-4 flex-1">
-          {[['Dashboard', '/dashboard'], ['Quotes', '/quotes'], ['Invoices', '/invoices'], ['Jobs', '/jobs'], ['WSIB Tracking', '/wsib'], ['AI Profit Analyzer', '/profit'], ['Settings', '/settings']].map(([label, href]) => (
-            <a key={href} href={href} className={`block px-4 py-2.5 rounded-lg mb-1 text-sm font-medium transition-colors ${href === '/wsib' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>{label}</a>
-          ))}
+        <nav style={{ padding: '12px', flex: 1 }}>
+          {NAV_ITEMS.map(item => {
+            const isActive = item.href === '/wsib';
+            return (
+              <a key={item.href} href={item.href} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
+                textDecoration: 'none', fontSize: '13.5px',
+                fontWeight: isActive ? '600' : '400',
+                color: isActive ? '#16a34a' : '#6b7280',
+                background: isActive ? '#f0fdf4' : 'transparent',
+                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
+              }}>
+                <span>{item.icon}</span>{item.label}
+              </a>
+            );
+          })}
         </nav>
+        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
         {/* Top bar */}
-        <div className="bg-[#0d1526] border-b border-gray-800 px-8 py-4 flex items-center justify-between">
-          <h1 className="text-white text-xl font-semibold">WSIB Tracking</h1>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="px-4 py-2 border border-gray-600 text-gray-300 rounded-full text-sm hover:bg-gray-800">Logout</button>
+        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>WSIB Tracking</h1>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Ontario workplace insurance compliance</p>
+          </div>
+          <button onClick={() => setShowForm(!showForm)} style={{
+            padding: '10px 20px', background: '#16a34a', color: 'white',
+            borderRadius: '8px', fontWeight: '600', fontSize: '14px',
+            border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+          }}>+ Log WSIB Period</button>
         </div>
 
-        <div className="p-8 space-y-6">
-          {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-[#0d1526] border border-gray-800 rounded-xl p-5">
-              <p className="text-gray-400 text-sm mb-1">Total Owing</p>
-              <p className="text-red-400 text-2xl font-bold">${totalOwing.toFixed(2)}</p>
+        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+
+          {message && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
+              {message}
             </div>
-            <div className="bg-[#0d1526] border border-gray-800 rounded-xl p-5">
-              <p className="text-gray-400 text-sm mb-1">Next Due Date</p>
-              <p className="text-white text-2xl font-bold">{nextDue ? new Date(nextDue.due_date).toLocaleDateString('en-CA') : '—'}</p>
-            </div>
-            <div className="bg-[#0d1526] border border-gray-800 rounded-xl p-5">
-              <p className="text-gray-400 text-sm mb-1">Total Paid This Year</p>
-              <p className="text-green-400 text-2xl font-bold">${totalPaid.toFixed(2)}</p>
-            </div>
-          </div>
+          )}
 
           {/* Overdue warning */}
           {overdue.length > 0 && (
-            <div className="bg-red-900/30 border border-red-700 rounded-xl p-4 text-red-300 text-sm">
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px', fontWeight: '500' }}>
               ⚠️ You have {overdue.length} overdue WSIB payment{overdue.length > 1 ? 's' : ''}. File immediately to avoid penalties.
             </div>
           )}
 
-          {/* Add new entry form */}
-          <div className="bg-[#0d1526] border border-gray-800 rounded-xl p-6">
-            <h2 className="text-white font-semibold text-lg mb-4">Log New WSIB Period</h2>
-            {message && <div className="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg text-blue-300 text-sm">{message}</div>}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-gray-400 text-sm block mb-1">Period Start</label>
-                <input type="date" value={form.period_start} onChange={e => setForm({...form, period_start: e.target.value})} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
+          {/* Summary cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { label: 'Total Owing', value: `$${totalOwing.toFixed(2)}`, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+              { label: 'Next Due Date', value: nextDue ? new Date(nextDue.due_date).toLocaleDateString('en-CA') : '—', color: '#111', bg: '#f9fafb', border: '#e5e7eb' },
+              { label: 'Total Paid This Year', value: `$${totalPaid.toFixed(2)}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+            ].map(card => (
+              <div key={card.label} style={{ background: card.bg, border: `1px solid ${card.border}`, borderRadius: '12px', padding: '20px' }}>
+                <p style={{ color: '#6b7280', fontSize: '12px', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>{card.label}</p>
+                <p style={{ color: card.color, fontSize: '26px', fontWeight: '800', margin: 0 }}>{card.value}</p>
               </div>
-              <div>
-                <label className="text-gray-400 text-sm block mb-1">Period End</label>
-                <input type="date" value={form.period_end} onChange={e => setForm({...form, period_end: e.target.value})} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm block mb-1">Reportable Earnings ($)</label>
-                <input type="number" placeholder="5000.00" value={form.reportable_earnings} onChange={e => setForm({...form, reportable_earnings: e.target.value})} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm block mb-1">WSIB Rate (%)</label>
-                <input type="number" step="0.01" value={form.wsib_rate} onChange={e => setForm({...form, wsib_rate: e.target.value})} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm block mb-1">Due Date</label>
-                <input type="date" value={form.due_date} onChange={e => setForm({...form, due_date: e.target.value})} className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm"/>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm block mb-1">Premium Owing (auto-calculated)</label>
-                <div className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-green-400 text-sm font-semibold">${premiumOwing}</div>
-              </div>
-              <div className="col-span-2">
-                <label className="text-gray-400 text-sm block mb-1">Notes</label>
-                <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} placeholder="Any additional notes..." className="w-full bg-[#0a0f1e] border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm resize-none"/>
-              </div>
-            </div>
-            <button onClick={saveEntry} disabled={saving} className="mt-4 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Saving...' : 'Save WSIB Entry'}</button>
+            ))}
           </div>
 
-          {/* Entries table */}
-          <div className="bg-[#0d1526] border border-gray-800 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800">
-              <h2 className="text-white font-semibold">WSIB History</h2>
+          {/* Form */}
+          {showForm && (
+            <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Log New WSIB Period</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                {[
+                  { label: 'Period Start', key: 'period_start', type: 'date' },
+                  { label: 'Period End', key: 'period_end', type: 'date' },
+                  { label: 'Reportable Earnings ($)', key: 'reportable_earnings', type: 'number', placeholder: '5000.00' },
+                  { label: 'WSIB Rate (%)', key: 'wsib_rate', type: 'number', placeholder: '1.69' },
+                  { label: 'Due Date', key: 'due_date', type: 'date' },
+                ].map(field => (
+                  <div key={field.key}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</label>
+                    <input
+                      type={field.type}
+                      value={(form as any)[field.key]}
+                      onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      placeholder={field.placeholder}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Premium Owing (auto)</label>
+                  <div style={{ padding: '10px 12px', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '14px', fontWeight: '700', color: '#16a34a', background: '#f0fdf4' }}>
+                    ${premiumOwing}
+                  </div>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</label>
+                  <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Any additional notes..."
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', resize: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button onClick={saveEntry} disabled={saving} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+                  {saving ? 'Saving...' : 'Save WSIB Entry'}
+                </button>
+                <button onClick={() => setShowForm(false)} style={{ padding: '10px 24px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Table */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+              <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>WSIB History</h2>
             </div>
             {loading ? (
-              <div className="p-8 text-center text-gray-400">Loading...</div>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading...</div>
             ) : entries.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">No WSIB entries yet. Log your first period above.</div>
+              <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🛡️</div>
+                <p style={{ margin: '0 0 16px', fontWeight: '500', color: '#374151' }}>No WSIB entries yet</p>
+                <button onClick={() => setShowForm(true)} style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                  Log your first period
+                </button>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-gray-800">
+                    <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                       {['Period', 'Reportable Earnings', 'Premium Owing', 'Due Date', 'Status', 'Actions'].map(h => (
-                        <th key={h} className="px-6 py-3 text-left text-gray-400 text-sm font-medium">{h}</th>
+                        <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {entries.map(entry => {
                       const isOverdue = entry.status === 'pending' && new Date(entry.due_date) < new Date();
+                      const statusStyle = entry.status === 'paid'
+                        ? { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', label: 'paid' }
+                        : isOverdue
+                        ? { bg: '#fef2f2', color: '#dc2626', border: '#fecaca', label: 'overdue' }
+                        : { bg: '#fefce8', color: '#854d0e', border: '#fde047', label: 'pending' };
                       return (
-                        <tr key={entry.id} className="border-b border-gray-800/50 hover:bg-gray-800/20">
-                          <td className="px-6 py-4 text-white text-sm">{new Date(entry.period_start).toLocaleDateString('en-CA')} – {new Date(entry.period_end).toLocaleDateString('en-CA')}</td>
-                          <td className="px-6 py-4 text-white text-sm">${entry.reportable_earnings.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-white text-sm font-semibold">${entry.premium_owing.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-sm">
-                            <span className={isOverdue ? 'text-red-400' : 'text-white'}>{new Date(entry.due_date).toLocaleDateString('en-CA')}</span>
+                        <tr key={entry.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                          <td style={{ padding: '14px 24px', color: '#111', fontSize: '13px' }}>
+                            {new Date(entry.period_start).toLocaleDateString('en-CA')} – {new Date(entry.period_end).toLocaleDateString('en-CA')}
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${entry.status === 'paid' ? 'bg-green-900/50 text-green-400' : isOverdue ? 'bg-red-900/50 text-red-400' : 'bg-yellow-900/50 text-yellow-400'}`}>
-                              {isOverdue ? 'overdue' : entry.status}
+                          <td style={{ padding: '14px 24px', color: '#374151', fontSize: '14px' }}>${entry.reportable_earnings.toFixed(2)}</td>
+                          <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '600' }}>${entry.premium_owing.toFixed(2)}</td>
+                          <td style={{ padding: '14px 24px', color: isOverdue ? '#dc2626' : '#374151', fontSize: '13px', fontWeight: isOverdue ? '600' : '400' }}>
+                            {new Date(entry.due_date).toLocaleDateString('en-CA')}
+                          </td>
+                          <td style={{ padding: '14px 24px' }}>
+                            <span style={{ background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600' }}>
+                              {statusStyle.label}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td style={{ padding: '14px 24px' }}>
                             {entry.status !== 'paid' && (
-                              <button onClick={() => markAsPaid(entry.id)} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Mark as Paid</button>
+                              <button onClick={() => markAsPaid(entry.id)}
+                                style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                ✓ Mark Paid
+                              </button>
                             )}
                           </td>
                         </tr>

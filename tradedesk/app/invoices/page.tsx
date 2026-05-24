@@ -1,10 +1,10 @@
 "use client";
 
 import { loadStripe } from "@stripe/stripe-js";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { generateInvoicePDF, invoiceRowToPdfData, type InvoiceDbRow } from "../../lib/generateInvoicePDF";
 import { supabase } from "../../lib/supabase";
+import { useRouter } from "next/navigation";
 
 type InvoiceRow = InvoiceDbRow & {
   id: string;
@@ -15,30 +15,25 @@ type InvoiceRow = InvoiceDbRow & {
   payment_link?: string | null;
 };
 
-const navLinks = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Quotes", href: "/quotes" },
-  { label: "Invoices", href: "/invoices" },
-  { label: "Jobs", href: "/jobs" },
-  { label: "WSIB Tracking", href: "/wsib" },
-  { label: "AI Profit Analyzer", href: "/profit" },
-  { label: "Settings", href: "/settings" },
+const NAV_ITEMS = [
+  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
+  { label: 'Appointments', href: '/appointments', icon: '📅' },
+  { label: 'Quotes', href: '/quotes', icon: '📋' },
+  { label: 'Invoices', href: '/invoices', icon: '🧾' },
+  { label: 'Jobs', href: '/jobs', icon: '🔧' },
+  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
+  { label: 'AI Profit Analyzer', href: '/profit', icon: '🤖' },
+  { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
 const formatCurrency = (value: number) =>
-  (value ?? 0).toLocaleString("en-CA", {
-    style: "currency",
-    currency: "CAD",
-  });
+  (value ?? 0).toLocaleString("en-CA", { style: "currency", currency: "CAD" });
 
 const formatDate = (value: string) =>
-  new Date(value).toLocaleDateString("en-CA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  new Date(value).toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
 
 export default function InvoicesPage() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -49,364 +44,235 @@ export default function InvoicesPage() {
   const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
   useEffect(() => {
-    if (stripePublishableKey) {
-      void loadStripe(stripePublishableKey);
-    }
+    if (stripePublishableKey) void loadStripe(stripePublishableKey);
   }, [stripePublishableKey]);
 
   const fetchInvoices = useCallback(async () => {
-    setErrorMessage("");
-
     const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      setErrorMessage("Please sign in to view your invoices.");
-      setLoading(false);
-      return;
-    }
-
+    if (authError || !authData.user) { setErrorMessage("Please sign in."); setLoading(false); return; }
     const { data, error } = await supabase
       .from("invoices")
-      .select(
-        "id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, payment_link"
-      )
+      .select("id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, payment_link")
       .eq("user_id", authData.user.id)
       .order("created_at", { ascending: false });
-
-    if (error) {
-      setErrorMessage(error.message);
-      setLoading(false);
-      return;
-    }
-
+    if (error) { setErrorMessage(error.message); setLoading(false); return; }
     setInvoices((data ?? []) as InvoiceRow[]);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    queueMicrotask(() => {
-      void fetchInvoices();
-    });
-  }, [fetchInvoices]);
+  useEffect(() => { queueMicrotask(() => { void fetchInvoices(); }); }, [fetchInvoices]);
 
   const handleMarkPaid = async (invoiceId: string) => {
-    setErrorMessage("");
     setMarkingPaidId(invoiceId);
-
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      setMarkingPaidId(null);
-      return;
-    }
-
-    const { error } = await supabase
-      .from("invoices")
-      .update({ status: "paid" })
-      .eq("id", invoiceId)
-      .eq("user_id", authData.user.id);
-
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) { setMarkingPaidId(null); return; }
+    await supabase.from("invoices").update({ status: "paid" }).eq("id", invoiceId).eq("user_id", authData.user.id);
     setMarkingPaidId(null);
-
-    if (error) {
-      setErrorMessage(error.message);
-      return;
-    }
-
-    setInvoices((current) =>
-      current.map((inv) => (inv.id === invoiceId ? { ...inv, status: "paid" } : inv))
-    );
+    setInvoices(current => current.map(inv => inv.id === invoiceId ? { ...inv, status: "paid" } : inv));
   };
 
   const handleSendPaymentLink = async (invoice: InvoiceRow) => {
-    setErrorMessage("");
-    setCopyToast(null);
     setPaymentLinkLoadingId(invoice.id);
-
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.access_token) {
-      setErrorMessage("Please sign in to create a payment link.");
-      setPaymentLinkLoadingId(null);
-      return;
-    }
-
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setErrorMessage("Please sign in."); setPaymentLinkLoadingId(null); return; }
     try {
       const response = await fetch("/api/create-payment-link", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          invoiceId: invoice.id,
-          amount: invoice.total,
-          customerEmail: invoice.customer_email ?? "",
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ invoiceId: invoice.id, amount: invoice.total, customerEmail: invoice.customer_email ?? "" }),
       });
-
-      const payload = (await response.json()) as { url?: string; error?: string };
-
-      if (!response.ok || !payload.url) {
-        setErrorMessage(payload.error ?? "Could not create payment link.");
-        setPaymentLinkLoadingId(null);
-        return;
-      }
-
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        setErrorMessage("Session expired. Please sign in again.");
-        setPaymentLinkLoadingId(null);
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from("invoices")
-        .update({ payment_link: payload.url })
-        .eq("id", invoice.id)
-        .eq("user_id", userData.user.id);
-
-      if (updateError) {
-        setErrorMessage(updateError.message);
-        setPaymentLinkLoadingId(null);
-        return;
-      }
-
-      setInvoices((current) =>
-        current.map((inv) =>
-          inv.id === invoice.id ? { ...inv, payment_link: payload.url } : inv
-        )
-      );
-    } catch {
-      setErrorMessage("Network error while creating payment link.");
-    }
-
+      const payload = await response.json() as { url?: string; error?: string };
+      if (!response.ok || !payload.url) { setErrorMessage(payload.error ?? "Could not create payment link."); setPaymentLinkLoadingId(null); return; }
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) { setPaymentLinkLoadingId(null); return; }
+      await supabase.from("invoices").update({ payment_link: payload.url }).eq("id", invoice.id).eq("user_id", userData.user.id);
+      setInvoices(current => current.map(inv => inv.id === invoice.id ? { ...inv, payment_link: payload.url } : inv));
+    } catch { setErrorMessage("Network error."); }
     setPaymentLinkLoadingId(null);
   };
 
   const handleCopyPaymentLink = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopyToast("Link copied to clipboard.");
-      setTimeout(() => setCopyToast(null), 2500);
-    } catch {
-      setErrorMessage("Could not copy to clipboard.");
-    }
+    await navigator.clipboard.writeText(url);
+    setCopyToast("Link copied!");
+    setTimeout(() => setCopyToast(null), 2500);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row">
-        <aside className="w-full border-b border-slate-800 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r">
-          <div className="flex items-center gap-3 px-6 py-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
-              TD
-            </div>
-            <span className="text-xl font-semibold tracking-tight">TradeDesk</span>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+
+      {/* Sidebar */}
+      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
           </div>
+        </div>
+        <nav style={{ padding: '12px', flex: 1 }}>
+          {NAV_ITEMS.map(item => {
+            const isActive = item.href === '/invoices';
+            return (
+              <a key={item.href} href={item.href} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
+                textDecoration: 'none', fontSize: '13.5px',
+                fontWeight: isActive ? '600' : '400',
+                color: isActive ? '#16a34a' : '#6b7280',
+                background: isActive ? '#f0fdf4' : 'transparent',
+                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
+              }}>
+                <span>{item.icon}</span>{item.label}
+              </a>
+            );
+          })}
+        </nav>
+        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
+            Logout
+          </button>
+        </div>
+      </div>
 
-          <nav className="grid grid-cols-2 gap-2 px-4 pb-5 lg:grid-cols-1 lg:px-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  link.label === "Invoices"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
+      {/* Main */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
-        <div className="flex-1">
-          <header className="border-b border-slate-800">
-            <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Welcome back, Contractor
-              </h1>
-              <button className="w-full rounded-full border border-slate-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-slate-500 sm:w-auto">
-                Logout
-              </button>
+        {/* Top bar */}
+        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Invoices</h1>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Track and manage customer payments</p>
+          </div>
+          <a href="/quotes" style={{ padding: '10px 20px', background: '#f9fafb', color: '#374151', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none', border: '1px solid #e5e7eb' }}>
+            From Quotes →
+          </a>
+        </div>
+
+        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+
+          {copyToast && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
+              {copyToast}
             </div>
-          </header>
+          )}
 
-          <main className="px-6 py-6">
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-xl font-semibold tracking-tight">Invoices</h2>
-                <Link
-                  href="/quotes"
-                  className="w-full rounded-full border border-slate-600 px-5 py-3 text-center text-sm font-semibold text-white transition hover:border-slate-400 sm:w-auto"
-                >
-                  From quotes
-                </Link>
+          {errorMessage && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px' }}>
+              {errorMessage}
+            </div>
+          )}
+
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+              <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>All Invoices</h2>
+            </div>
+
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading invoices...</div>
+            ) : invoices.length === 0 ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🧾</div>
+                <p style={{ margin: '0 0 16px', fontWeight: '500', color: '#374151' }}>No invoices yet</p>
+                <a href="/quotes" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Convert a quote to invoice</a>
               </div>
-
-              {copyToast ? (
-                <p className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-                  {copyToast}
-                </p>
-              ) : null}
-
-              {stripePublishableKey ? (
-                <p className="mb-4 text-xs text-slate-500">
-                  Online payments use Stripe (publishable key loaded for checkout compatibility).
-                </p>
-              ) : null}
-
-              {errorMessage ? (
-                <p className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                  {errorMessage}
-                </p>
-              ) : null}
-
-              {loading ? (
-                <p className="text-slate-300">Loading invoices...</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[960px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 text-slate-300">
-                        <th className="px-3 py-3 font-medium">Customer Name</th>
-                        <th className="px-3 py-3 font-medium">Total</th>
-                        <th className="px-3 py-3 font-medium">Status</th>
-                        <th className="px-3 py-3 font-medium">Date</th>
-                        <th className="px-3 py-3 font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoices.length > 0 ? (
-                        invoices.map((invoice) => {
-                          const statusKey = (invoice.status || "unpaid").toLowerCase();
-                          const isPaid = statusKey === "paid";
-                          return (
-                            <tr
-                              key={invoice.id}
-                              className="border-b border-slate-800/80 text-slate-100 last:border-0"
-                            >
-                              <td className="px-3 py-3">{invoice.customer_name || "-"}</td>
-                              <td className="px-3 py-3">{formatCurrency(invoice.total)}</td>
-                              <td className="px-3 py-3">
-                                <span
-                                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                    isPaid
-                                      ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40"
-                                      : "bg-red-500/20 text-red-300 ring-1 ring-red-500/40"
-                                  }`}
-                                >
-                                  {isPaid ? "paid" : "unpaid"}
-                                </span>
-                              </td>
-                              <td className="px-3 py-3 text-slate-300">
-                                {formatDate(invoice.created_at)}
-                              </td>
-                              <td className="px-3 py-3 align-top">
-                                <div className="flex max-w-md flex-col gap-2">
-                                  <div className="flex flex-wrap gap-2">
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      {['Customer', 'Total', 'Status', 'Date', 'Actions'].map(h => (
+                        <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map(invoice => {
+                      const isPaid = (invoice.status || '').toLowerCase() === 'paid';
+                      return (
+                        <tr key={invoice.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                          <td style={{ padding: '16px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{invoice.customer_name || '—'}</td>
+                          <td style={{ padding: '16px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(invoice.total)}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <span style={{
+                              background: isPaid ? '#f0fdf4' : '#fef2f2',
+                              color: isPaid ? '#16a34a' : '#dc2626',
+                              border: `1px solid ${isPaid ? '#bbf7d0' : '#fecaca'}`,
+                              borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600'
+                            }}>
+                              {isPaid ? 'Paid' : 'Unpaid'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 24px', color: '#6b7280', fontSize: '13px' }}>{formatDate(invoice.created_at)}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <button
+                                  onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))}
+                                  style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                  PDF
+                                </button>
+                                {!isPaid && (
+                                  <>
                                     <button
-                                      type="button"
-                                      onClick={() =>
-                                        generateInvoicePDF(invoiceRowToPdfData(invoice))
-                                      }
-                                      className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500"
-                                    >
-                                      Download PDF
+                                      disabled={paymentLinkLoadingId === invoice.id}
+                                      onClick={() => void handleSendPaymentLink(invoice)}
+                                      style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>
+                                      {paymentLinkLoadingId === invoice.id ? 'Creating...' : '💳 Payment Link'}
                                     </button>
-                                    {!isPaid ? (
-                                      <>
-                                        <button
-                                          type="button"
-                                          disabled={paymentLinkLoadingId === invoice.id}
-                                          onClick={() => void handleSendPaymentLink(invoice)}
-                                          className="rounded-full border border-violet-500/60 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                          {paymentLinkLoadingId === invoice.id
-                                            ? "Creating link..."
-                                            : "Send Payment Link"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          disabled={markingPaidId === invoice.id}
-                                          onClick={() => void handleMarkPaid(invoice.id)}
-                                          className="rounded-full border border-emerald-600/60 bg-emerald-600/15 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-600/25 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                          {markingPaidId === invoice.id
-                                            ? "Updating..."
-                                            : "Mark as Paid"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={async () => {
-                                            const res = await fetch('/api/send-invoice-reminder', {
-                                              method: 'POST',
-                                              headers: { 'Content-Type': 'application/json' },
-                                              body: JSON.stringify({
-                                                customerEmail: invoice.customer_email,
-                                                customerName: invoice.customer_name,
-                                                invoiceTotal: invoice.total?.toFixed(2),
-                                                invoiceId: invoice.id,
-                                                contractorName: 'TradeDesk Contractor',
-                                                contractorPhone: '',
-                                                paymentLink: invoice.payment_link || '',
-                                              })
-                                            });
-                                            const data = await res.json();
-                                            if (data.success) alert('Reminder sent!');
-                                            else alert('Error: ' + data.error);
-                                          }}
-                                          className="rounded-full border border-yellow-600/60 bg-yellow-600/15 px-3 py-1.5 text-xs font-semibold text-yellow-300 transition hover:bg-yellow-600/25"
-                                        >
-                                          Send Reminder
-                                        </button>
-                                      </>
-                                    ) : null}
+                                    <button
+                                      disabled={markingPaidId === invoice.id}
+                                      onClick={() => void handleMarkPaid(invoice.id)}
+                                      style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: markingPaidId === invoice.id ? 0.6 : 1 }}>
+                                      {markingPaidId === invoice.id ? 'Updating...' : '✓ Mark Paid'}
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        const res = await fetch('/api/send-invoice-reminder', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({
+                                            customerEmail: invoice.customer_email,
+                                            customerName: invoice.customer_name,
+                                            invoiceTotal: invoice.total?.toFixed(2),
+                                            invoiceId: invoice.id,
+                                            contractorName: 'TradeDesk Contractor',
+                                            contractorPhone: '',
+                                            paymentLink: invoice.payment_link || '',
+                                          })
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) alert('Reminder sent!');
+                                        else alert('Error: ' + data.error);
+                                      }}
+                                      style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                      📧 Remind
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                              {!isPaid && invoice.payment_link && (
+                                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px' }}>
+                                  <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Payment Link</p>
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <input readOnly value={invoice.payment_link}
+                                      style={{ flex: 1, padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', color: '#374151', background: 'white' }} />
+                                    <button onClick={() => void handleCopyPaymentLink(invoice.payment_link!)}
+                                      style={{ padding: '6px 12px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                      Copy
+                                    </button>
                                   </div>
-                                  {!isPaid && invoice.payment_link ? (
-                                    <div className="rounded-lg border border-slate-700 bg-slate-950/80 p-2">
-                                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                                        Payment link — copy and send to customer
-                                      </p>
-                                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                        <input
-                                          readOnly
-                                          value={invoice.payment_link}
-                                          className="min-w-0 flex-1 rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-xs text-slate-200"
-                                        />
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            void handleCopyPaymentLink(invoice.payment_link!)
-                                          }
-                                          className="shrink-0 rounded-full border border-slate-500 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-slate-400"
-                                        >
-                                          Copy link
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : null}
                                 </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td className="px-3 py-6 text-slate-300" colSpan={5}>
-                            No invoices yet. Convert a quote to create one.
+                              )}
+                            </div>
                           </td>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          </main>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
