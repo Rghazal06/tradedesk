@@ -58,7 +58,7 @@ export default function QuotesPage() {
       const { data, error } = await supabase
         .from("quotes")
         .select(
-          "id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at"
+          "id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, portal_token"
         )
         .eq("user_id", authData.user.id)
         .order("created_at", { ascending: false });
@@ -226,6 +226,26 @@ export default function QuotesPage() {
                                   className="rounded-full border border-amber-600/60 bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   {convertingId === quote.id ? "Converting..." : "Convert to Invoice"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const anyQuote = quote as any;
+                                    if (!anyQuote.portal_token) {
+                                      const token = crypto.randomUUID();
+                                      await supabase.from('quotes').update({ portal_token: token }).eq('id', quote.id);
+                                      const link = `${window.location.origin}/portal?token=${token}`;
+                                      navigator.clipboard.writeText(link);
+                                      alert('Portal link copied! Send this to your customer: ' + link);
+                                    } else {
+                                      const link = `${window.location.origin}/portal/${anyQuote.portal_token}`;
+                                      navigator.clipboard.writeText(link);
+                                      alert('Portal link copied! Send this to your customer: ' + link);
+                                    }
+                                  }}
+                                  className="rounded-full border border-purple-600/60 bg-purple-500/15 px-3 py-1.5 text-xs font-semibold text-purple-200 transition hover:bg-purple-500/25"
+                                >
+                                  Share Portal 🔗
                                 </button>
                               </div>
                             </td>
