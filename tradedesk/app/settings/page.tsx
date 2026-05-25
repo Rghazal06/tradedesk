@@ -16,7 +16,8 @@ const NAV_ITEMS = [
   { label: 'Invoices', href: '/invoices', icon: '🧾' },
   { label: 'Jobs', href: '/jobs', icon: '🔧' },
   { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
-  { label: 'AI Profit Analyzer', href: '/profit', icon: '🤖' },
+  { label: 'AI Assistant', href: '/assistant', icon: '🤖' },
+  { label: 'AI Profit Analyzer', href: '/profit', icon: '📈' },
   { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
