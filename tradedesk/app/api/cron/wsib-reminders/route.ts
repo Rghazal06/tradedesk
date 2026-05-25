@@ -16,7 +16,7 @@ export async function GET() {
 
     const { data: entries, error } = await supabase
       .from('wsib_entries')
-      .select('*, profiles!inner(email, full_name)')
+      .select('*')
       .eq('status', 'pending')
       .lte('due_date', threeDaysStr);
 
@@ -25,18 +25,24 @@ export async function GET() {
 
     let sent = 0;
     for (const entry of entries) {
-      const profile = (entry as any).profiles;
-      if (!profile?.email) continue;
+      const { data: { user } } = await supabase.auth.admin.getUserById(entry.user_id);
+      const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', entry.user_id).single();
+      
+      const email = user?.email || profile?.email;
+      const name = profile?.full_name || 'Contractor';
+      
+      if (!email) continue;
+
       await resend.emails.send({
         from: 'TradeDesk <onboarding@resend.dev>',
-        to: profile.email,
+        to: email,
         subject: `⚠️ WSIB Payment Due Soon — $${entry.premium_owing?.toFixed(2)}`,
         html: `
           <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px;">
             <div style="background: #16a34a; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
               <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 700;">TradeDesk WSIB Alert</h1>
             </div>
-            <p style="color: #374151; font-size: 16px;">Hi <strong>${profile.full_name}</strong>,</p>
+            <p style="color: #374151; font-size: 16px;">Hi <strong>${name}</strong>,</p>
             <p style="color: #374151; font-size: 16px;">Your WSIB payment is due in 3 days. Don't miss the deadline to avoid penalties.</p>
             <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin: 20px 0;">
               <p style="color: #6b7280; font-size: 13px; margin: 0 0 8px;">Premium Owing</p>
