@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import NotificationBell from '../../components/NotificationBell';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ quotes: 0, unpaidInvoices: 0, activeJobs: 0, revenue: 0 });
   const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
   const [userName, setUserName] = useState('');
+  const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadDashboard(); }, []);
@@ -34,6 +36,8 @@ export default function DashboardPage() {
   async function loadDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
+
+    setUserId(user.id);
 
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
     if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
@@ -108,11 +112,14 @@ export default function DashboardPage() {
             </h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Here's what's happening with your business</p>
           </div>
-          <a href="/quotes/new" style={{
-            padding: '10px 20px', background: '#16a34a', color: 'white',
-            borderRadius: '8px', fontWeight: '600', fontSize: '14px',
-            textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
-          }}>+ New Quote</a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {userId && <NotificationBell userId={userId} />}
+            <a href="/quotes/new" style={{
+              padding: '10px 20px', background: '#16a34a', color: 'white',
+              borderRadius: '8px', fontWeight: '600', fontSize: '14px',
+              textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+            }}>+ New Quote</a>
+          </div>
         </div>
 
         <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
