@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { useEffect, useMemo, useState } from "react";
@@ -12,47 +11,30 @@ type LineItem = {
   unitPrice: string;
 };
 
-const navLinks = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Quotes", href: "/quotes" },
-  { label: "Invoices", href: "/invoices" },
-  { label: "Jobs", href: "/jobs" },
-  { label: "WSIB Tracking", href: "/wsib" },
-  { label: "AI Profit Analyzer", href: "/profit" },
-  { label: "Settings", href: "/settings" },
+const NAV_ITEMS = [
+  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
+  { label: 'Appointments', href: '/appointments', icon: '📅' },
+  { label: 'Quotes', href: '/quotes', icon: '📋' },
+  { label: 'Invoices', href: '/invoices', icon: '🧾' },
+  { label: 'Jobs', href: '/jobs', icon: '🔧' },
+  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
+  { label: 'AI Profit Analyzer', href: '/profit', icon: '🤖' },
+  { label: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
-const createEmptyLineItem = (id: number): LineItem => ({
-  id,
-  description: "",
-  quantity: "1",
-  unitPrice: "",
-});
-
-const toNumber = (value: string) => {
-  const parsed = Number.parseFloat(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
+const createEmptyLineItem = (id: number): LineItem => ({ id, description: "", quantity: "1", unitPrice: "" });
+const toNumber = (value: string) => { const parsed = Number.parseFloat(value); return Number.isNaN(parsed) ? 0 : parsed; };
 const lineItemTotal = (item: LineItem) => toNumber(item.quantity) * toNumber(item.unitPrice);
+const formatCurrency = (value: number) => value.toLocaleString("en-CA", { style: "currency", currency: "CAD" });
 
-const formatCurrency = (value: number) =>
-  value.toLocaleString("en-CA", {
-    style: "currency",
-    currency: "CAD",
-  });
+const inputStyle = {
+  width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb',
+  borderRadius: '8px', fontSize: '14px', color: '#111',
+  background: '#f9fafb', boxSizing: 'border-box' as const, outline: 'none',
+};
 
 export default function NewQuotePage() {
   const router = useRouter();
-  useEffect(() => {
-  async function checkAuth() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push('/login'); return; }
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-    if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
-  }
-  checkAuth();
-}, []);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -66,381 +48,270 @@ export default function NewQuotePage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [userName, setUserName] = useState('Contractor');
 
-  const subtotal = useMemo(
-    () => lineItems.reduce((sum, item) => sum + lineItemTotal(item), 0),
-    [lineItems]
-  );
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/login'); return; }
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+      if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
+    }
+    checkAuth();
+  }, []);
+
+  const subtotal = useMemo(() => lineItems.reduce((sum, item) => sum + lineItemTotal(item), 0), [lineItems]);
   const hst = subtotal * 0.13;
   const total = subtotal + hst;
 
-  const updateLineItem = (
-    itemId: number,
-    field: "description" | "quantity" | "unitPrice",
-    value: string
-  ) => {
-    setLineItems((current) =>
-      current.map((item) => (item.id === itemId ? { ...item, [field]: value } : item))
-    );
+  const updateLineItem = (itemId: number, field: "description" | "quantity" | "unitPrice", value: string) => {
+    setLineItems(current => current.map(item => item.id === itemId ? { ...item, [field]: value } : item));
   };
 
-  const addLineItem = () => {
-    setLineItems((current) => [...current, createEmptyLineItem(Date.now())]);
-  };
-
+  const addLineItem = () => setLineItems(current => [...current, createEmptyLineItem(Date.now())]);
   const removeLineItem = (itemId: number) => {
-    setLineItems((current) => {
-      const filtered = current.filter((item) => item.id !== itemId);
-      return filtered.length > 0 ? filtered : [createEmptyLineItem(Date.now())];
-    });
+    setLineItems(current => { const filtered = current.filter(item => item.id !== itemId); return filtered.length > 0 ? filtered : [createEmptyLineItem(Date.now())]; });
   };
 
   const handleAIGenerate = async () => {
-  if (!jobDescription) {
-    setErrorMessage('Please enter a job description first so AI knows what to quote.');
-    return;
-  }
-  setIsGenerating(true);
-  setErrorMessage('');
-  try {
-    const res = await fetch('/api/ai-quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobDescription, tradeType }),
-    });
-    const data = await res.json();
-    if (data.error) { setErrorMessage(data.error); return; }
-    if (data.line_items) {
-      setLineItems(data.line_items.map((item: any, index: number) => ({
-        id: Date.now() + index,
-        description: item.description,
-        quantity: String(item.quantity),
-        unitPrice: String(item.unit_price),
-      })));
-    }
-    if (data.notes) setQuoteNotes(data.notes);
-    setSuccessMessage('AI generated your quote! Review and adjust before sending.');
-  } catch (error) {
-    setErrorMessage('AI generation failed. Please try again.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
+    if (!jobDescription) { setErrorMessage('Please enter a job description first.'); return; }
+    setIsGenerating(true); setErrorMessage('');
+    try {
+      const res = await fetch('/api/ai-quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobDescription, tradeType }) });
+      const data = await res.json();
+      if (data.error) { setErrorMessage(data.error); return; }
+      if (data.line_items) {
+        setLineItems(data.line_items.map((item: any, index: number) => ({ id: Date.now() + index, description: item.description, quantity: String(item.quantity), unitPrice: String(item.unit_price) })));
+      }
+      if (data.notes) setQuoteNotes(data.notes);
+      setSuccessMessage('AI generated your quote! Review and adjust before sending.');
+    } catch { setErrorMessage('AI generation failed. Please try again.'); }
+    finally { setIsGenerating(false); }
+  };
 
   const handleSaveQuote = async () => {
-    setErrorMessage("");
-    setSuccessMessage("");
-    setIsSaving(true);
-
+    setErrorMessage(""); setSuccessMessage(""); setIsSaving(true);
     const { data: authData, error: authError } = await supabase.auth.getUser();
     const user = authData.user;
-
-    if (authError || !user) {
-      setIsSaving(false);
-      router.push("/login");
-      return;
-    }
-
-    const normalizedLineItems = lineItems.map((item) => ({
-      description: item.description,
-      quantity: toNumber(item.quantity),
-      unit_price: toNumber(item.unitPrice),
-      total: lineItemTotal(item),
-    }));
-
-    const { error } = await supabase.from("quotes").insert({
-      user_id: user.id,
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone,
-      job_description: jobDescription,
-      line_items: normalizedLineItems,
-      subtotal,
-      hst,
-      total,
-      notes: quoteNotes,
-      status: "Draft",
-    });
-
-    if (error) {
-      setErrorMessage(error.message);
-      setIsSaving(false);
-      return;
-    }
-
-    setSuccessMessage("Quote saved successfully. Redirecting...");
+    if (authError || !user) { setIsSaving(false); router.push("/login"); return; }
+    const normalizedLineItems = lineItems.map(item => ({ description: item.description, quantity: toNumber(item.quantity), unit_price: toNumber(item.unitPrice), total: lineItemTotal(item) }));
+    const { error } = await supabase.from("quotes").insert({ user_id: user.id, customer_name: customerName, customer_email: customerEmail, customer_phone: customerPhone, job_description: jobDescription, line_items: normalizedLineItems, subtotal, hst, total, notes: quoteNotes, status: "Draft" });
+    if (error) { setErrorMessage(error.message); setIsSaving(false); return; }
+    setSuccessMessage("Quote saved! Redirecting...");
     setIsSaving(false);
-    setTimeout(() => {
-      router.push("/quotes");
-    }, 800);
+    setTimeout(() => router.push("/quotes"), 800);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex w-full max-w-7xl flex-col lg:flex-row">
-        <aside className="w-full border-b border-slate-800 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r">
-          <div className="flex items-center gap-3 px-6 py-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
-              TD
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+
+      {/* Sidebar */}
+      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
+          </div>
+        </div>
+        <nav style={{ padding: '12px', flex: 1 }}>
+          {NAV_ITEMS.map(item => {
+            const isActive = item.href === '/quotes';
+            return (
+              <a key={item.href} href={item.href} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
+                textDecoration: 'none', fontSize: '13.5px',
+                fontWeight: isActive ? '600' : '400',
+                color: isActive ? '#16a34a' : '#6b7280',
+                background: isActive ? '#f0fdf4' : 'transparent',
+                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
+              }}>
+                <span>{item.icon}</span>{item.label}
+              </a>
+            );
+          })}
+        </nav>
+        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
+            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Top bar */}
+        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Create New Quote</h1>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Welcome back, {userName}</p>
+          </div>
+          <a href="/quotes" style={{ padding: '8px 16px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#374151', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>
+            ← Back to Quotes
+          </a>
+        </div>
+
+        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+
+          {errorMessage && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px' }}>
+              {errorMessage}
             </div>
-            <span className="text-xl font-semibold tracking-tight">TradeDesk</span>
+          )}
+          {successMessage && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
+              ✓ {successMessage}
+            </div>
+          )}
+
+          {/* Customer Info */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Customer Information</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customer Name</label>
+                <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="John Smith" style={inputStyle} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email</label>
+                <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="customer@email.com" style={inputStyle} />
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone Number</label>
+                <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="519-555-0000" style={inputStyle} />
+              </div>
+            </div>
           </div>
 
-          <nav className="grid grid-cols-2 gap-2 px-4 pb-5 lg:grid-cols-1 lg:px-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  link.label === "Quotes"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-
-        <div className="flex-1">
-          <header className="border-b border-slate-800">
-            <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Welcome back, {userName}
-              </h1>
-              <button className="w-full rounded-full border border-slate-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-slate-500 sm:w-auto">
-                Logout
+          {/* Job Description + AI */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Job Details</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'end', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Trade Type (for AI)</label>
+                <select value={tradeType} onChange={e => setTradeType(e.target.value)} style={inputStyle}>
+                  <option value="">Select your trade</option>
+                  {['Electrician', 'Plumber', 'HVAC', 'General Contractor', 'Roofer', 'Other'].map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleAIGenerate}
+                disabled={isGenerating}
+                style={{
+                  padding: '10px 20px', background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700',
+                  fontSize: '14px', cursor: 'pointer', opacity: isGenerating ? 0.7 : 1,
+                  display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
+                }}>
+                {isGenerating ? (
+                  <>
+                    <svg style={{ animation: 'spin 1s linear infinite', width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none">
+                      <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Generating...
+                  </>
+                ) : '✨ Generate with AI'}
               </button>
             </div>
-          </header>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Description</label>
+              <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={4} placeholder="Describe the scope of work..."
+                style={{ ...inputStyle, resize: 'none' }} />
+            </div>
+          </div>
 
-          <main className="px-6 py-6">
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-xl font-semibold tracking-tight">Create New Quote</h2>
-                <button className="w-full rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 sm:w-auto">
-                  New Quote
-                </button>
+          {/* Line Items */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: 0 }}>Line Items</h2>
+              <button onClick={addLineItem} style={{ padding: '8px 16px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', fontWeight: '600', color: '#374151', cursor: 'pointer' }}>
+                + Add Item
+              </button>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    {['Description', 'Quantity', 'Unit Price', 'Total', ''].map(h => (
+                      <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.map(item => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                      <td style={{ padding: '10px 12px', width: '40%' }}>
+                        <input value={item.description} onChange={e => updateLineItem(item.id, "description", e.target.value)} placeholder="Service description"
+                          style={{ ...inputStyle, padding: '8px 10px' }} />
+                      </td>
+                      <td style={{ padding: '10px 12px', width: '15%' }}>
+                        <input value={item.quantity} onChange={e => updateLineItem(item.id, "quantity", e.target.value)} type="number" min="0"
+                          style={{ ...inputStyle, padding: '8px 10px' }} />
+                      </td>
+                      <td style={{ padding: '10px 12px', width: '20%' }}>
+                        <input value={item.unitPrice} onChange={e => updateLineItem(item.id, "unitPrice", e.target.value)} type="number" min="0" step="0.01" placeholder="0.00"
+                          style={{ ...inputStyle, padding: '8px 10px' }} />
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#16a34a', fontWeight: '700', fontSize: '14px' }}>
+                        {formatCurrency(lineItemTotal(item))}
+                      </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <button onClick={() => removeLineItem(item.id)}
+                          style={{ padding: '6px 10px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div style={{ marginTop: '16px', marginLeft: 'auto', maxWidth: '300px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+              {[
+                { label: 'Subtotal', value: formatCurrency(subtotal), bold: false },
+                { label: 'HST (13%)', value: formatCurrency(hst), bold: false },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', color: '#6b7280' }}>
+                  <span>{row.label}</span><span>{row.value}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e5e7eb', paddingTop: '10px', fontSize: '16px', fontWeight: '800', color: '#111' }}>
+                <span>Total (CAD)</span><span style={{ color: '#16a34a' }}>{formatCurrency(total)}</span>
               </div>
+            </div>
+          </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
-                    Customer Name
-                  </label>
-                  <input
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    placeholder="Customer full name"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
-                    Email
-                  </label>
-                  <input
-                    value={customerEmail}
-                    onChange={(event) => setCustomerEmail(event.target.value)}
-                    placeholder="customer@email.com"
-                    type="email"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
-                    Phone Number
-                  </label>
-                  <input
-                    value={customerPhone}
-                    onChange={(event) => setCustomerPhone(event.target.value)}
-                    placeholder="(555) 123-4567"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
-                    Job Description
+          {/* Notes */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Quote Notes / Terms</label>
+            <textarea value={quoteNotes} onChange={e => setQuoteNotes(e.target.value)} rows={3} placeholder="Payment terms, warranty details, and other notes..."
+              style={{ ...inputStyle, resize: 'none' }} />
+          </div>
 
-                    <div className="md:col-span-2 flex gap-3 items-end">
-  <div className="flex-1">
-    <label className="mb-2 block text-sm font-medium text-slate-300">
-      Trade Type (for AI)
-    </label>
-    <select
-      value={tradeType}
-      onChange={e => setTradeType(e.target.value)}
-      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white">
-      <option value="">Select your trade</option>
-      {['Electrician', 'Plumber', 'HVAC', 'General Contractor', 'Roofer', 'Other'].map(t => (
-        <option key={t} value={t}>{t}</option>
-      ))}
-    </select>
-  </div>
-  <button
-    type="button"
-    onClick={handleAIGenerate}
-    disabled={isGenerating}
-    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-semibold text-sm disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
-    {isGenerating ? (
-      <>
-        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-        </svg>
-        AI Generating...
-      </>
-    ) : (
-      <>✨ Generate with AI</>
-    )}
-  </button>
-</div>
-
-                  </label>
-                  <textarea
-                    value={jobDescription}
-                    onChange={(event) => setJobDescription(event.target.value)}
-                    rows={4}
-                    placeholder="Describe the scope of work..."
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Line Items</h3>
-                  <button
-                    type="button"
-                    onClick={addLineItem}
-                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:border-slate-500"
-                  >
-                    Add Line Item
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto rounded-xl border border-slate-800">
-                  <table className="w-full min-w-[720px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/70 text-slate-300">
-                        <th className="px-3 py-3 font-medium">Description</th>
-                        <th className="px-3 py-3 font-medium">Quantity</th>
-                        <th className="px-3 py-3 font-medium">Unit Price</th>
-                        <th className="px-3 py-3 font-medium">Total</th>
-                        <th className="px-3 py-3 font-medium">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lineItems.map((item) => (
-                        <tr key={item.id} className="border-b border-slate-800/80 last:border-0">
-                          <td className="px-3 py-3">
-                            <input
-                              value={item.description}
-                              onChange={(event) =>
-                                updateLineItem(item.id, "description", event.target.value)
-                              }
-                              placeholder="Service description"
-                              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                            />
-                          </td>
-                          <td className="px-3 py-3">
-                            <input
-                              value={item.quantity}
-                              onChange={(event) =>
-                                updateLineItem(item.id, "quantity", event.target.value)
-                              }
-                              type="number"
-                              min="0"
-                              step="1"
-                              className="w-24 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
-                            />
-                          </td>
-                          <td className="px-3 py-3">
-                            <input
-                              value={item.unitPrice}
-                              onChange={(event) =>
-                                updateLineItem(item.id, "unitPrice", event.target.value)
-                              }
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              className="w-32 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
-                            />
-                          </td>
-                          <td className="px-3 py-3 font-semibold text-slate-100">
-                            {formatCurrency(lineItemTotal(item))}
-                          </td>
-                          <td className="px-3 py-3">
-                            <button
-                              type="button"
-                              onClick={() => removeLineItem(item.id)}
-                              className="rounded-full border border-red-400/50 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:border-red-300 hover:text-red-200"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="mt-6 ml-auto w-full max-w-sm space-y-2 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                <div className="flex items-center justify-between text-slate-300">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-300">
-                  <span>HST (13%)</span>
-                  <span>{formatCurrency(hst)}</span>
-                </div>
-                <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-lg font-semibold text-white">
-                  <span>Total</span>
-                  <span>{formatCurrency(total)}</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="mb-2 block text-sm font-medium text-slate-300">
-                  Quote Notes / Terms
-                </label>
-                <textarea
-                  value={quoteNotes}
-                  onChange={(event) => setQuoteNotes(event.target.value)}
-                  rows={4}
-                  placeholder="Payment terms, warranty details, and other notes..."
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={handleSaveQuote}
-                  disabled={isSaving}
-                  className="w-full rounded-full border border-slate-700 px-5 py-3 text-sm font-semibold text-white transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-                >
-                  {isSaving ? "Saving..." : "Save Quote"}
-                </button>
-                <button className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 sm:w-auto">
-                  Send to Customer
-                </button>
-              </div>
-
-              {errorMessage ? (
-                <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                  {errorMessage}
-                </p>
-              ) : null}
-
-              {successMessage ? (
-                <p className="mt-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-                  {successMessage}
-                </p>
-              ) : null}
-            </section>
-          </main>
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={handleSaveQuote} disabled={isSaving} style={{
+              padding: '12px 28px', background: '#16a34a', color: 'white',
+              border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '700',
+              cursor: 'pointer', opacity: isSaving ? 0.7 : 1,
+              boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
+            }}>
+              {isSaving ? 'Saving...' : 'Save Quote'}
+            </button>
+            <button onClick={() => router.push('/quotes')} style={{
+              padding: '12px 28px', background: 'white', color: '#374151',
+              border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '15px',
+              fontWeight: '600', cursor: 'pointer',
+            }}>
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>

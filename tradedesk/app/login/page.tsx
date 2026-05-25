@@ -16,110 +16,99 @@ export default function LoginPage() {
     event.preventDefault();
     setErrorMessage("");
     setIsLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setErrorMessage(error.message);
-      setIsLoading(false);
-      return;
-    }
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { setErrorMessage(error.message); setIsLoading(false); return; }
     setIsLoading(false);
     router.push("/dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-slate-800/80">
-        <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
-              TD
-            </div>
-            <span className="text-xl font-semibold tracking-tight">TradeDesk</span>
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded-full border border-slate-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-slate-500"
-          >
-            Create Account
-          </Link>
-        </nav>
-      </header>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
 
-      <main className="mx-auto flex w-full max-w-6xl justify-center px-6 py-16">
-        <section className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-slate-950/40">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-          <p className="mt-3 text-slate-300">
-            Sign in to continue managing your business with TradeDesk.
-          </p>
+      {/* Navbar */}
+      <nav style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+          <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
+          <span style={{ fontWeight: '700', fontSize: '18px', color: '#111' }}>TradeDesk</span>
+        </Link>
+        <Link href="/signup" style={{ padding: '8px 18px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: '#374151', textDecoration: 'none' }}>
+          Create Account
+        </Link>
+      </nav>
 
-          <form className="mt-8 space-y-5" onSubmit={handleSignIn}>
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-medium text-slate-200"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+      {/* Main */}
+      <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 24px', minHeight: 'calc(100vh - 64px)' }}>
+        <div style={{ width: '100%', maxWidth: '440px' }}>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-medium text-slate-200"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ width: '48px', height: '48px', background: '#16a34a', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '18px', margin: '0 auto 16px' }}>TD</div>
+            <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#111', margin: '0 0 8px', letterSpacing: '-0.5px' }}>Welcome back</h1>
+            <p style={{ color: '#6b7280', fontSize: '15px', margin: 0 }}>Sign in to your TradeDesk account</p>
+          </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isLoading ? "Signing In..." : "Sign In"}
-            </button>
-          </form>
+          {/* Card */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
 
-          {errorMessage ? (
-            <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-              {errorMessage}
+            {errorMessage && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px' }}>
+                {errorMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '12px 14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '12px 14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  width: '100%', padding: '13px', background: '#16a34a', color: 'white',
+                  border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '700',
+                  cursor: 'pointer', opacity: isLoading ? 0.7 : 1,
+                  boxShadow: '0 4px 12px rgba(22,163,74,0.3)',
+                }}>
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+
+            <p style={{ textAlign: 'center', fontSize: '14px', color: '#6b7280', marginTop: '20px', marginBottom: 0 }}>
+              Don't have an account?{' '}
+              <Link href="/signup" style={{ color: '#16a34a', fontWeight: '600', textDecoration: 'none' }}>
+                Create one free
+              </Link>
             </p>
-          ) : null}
+          </div>
 
-          <p className="mt-6 text-center text-sm text-slate-300">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/signup"
-              className="font-semibold text-blue-400 transition hover:text-blue-300"
-            >
-              Create one
-            </Link>
-          </p>
-        </section>
+          {/* Trust signals */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
+            {['🔒 Secure', '🇨🇦 Canadian Data', '14-day free trial'].map(item => (
+              <span key={item} style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '500' }}>{item}</span>
+            ))}
+          </div>
+        </div>
       </main>
     </div>
   );
