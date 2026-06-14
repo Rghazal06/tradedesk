@@ -36,7 +36,7 @@ export function LogoWordmark({ onDark = false }: { onDark?: boolean }) {
   );
 }
 
-const Icon: Record<string, () => JSX.Element> = {
+const Icon: Record<string, () => React.JSX.Element> = {
   dashboard: () => (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
       <rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.4"/>
