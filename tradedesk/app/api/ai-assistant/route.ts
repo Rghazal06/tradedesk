@@ -3,13 +3,13 @@ import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit } from '../../../lib/rateLimit';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: NextRequest) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const ip = req.headers.get('x-forwarded-for') || 'unknown';
   if (!rateLimit(ip, 20, 60000)) {
     return NextResponse.json({ error: 'Too many requests. Please wait a minute.' }, { status: 429 });

@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createBrowserClient } from '@supabase/ssr';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export async function POST(req: NextRequest) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   try {
     const { imageBase64, mimeType } = await req.json();
 
