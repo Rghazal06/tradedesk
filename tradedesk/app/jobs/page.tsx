@@ -1,26 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import Sidebar from '../../components/Sidebar';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
-  { label: 'Appointments', href: '/appointments', icon: '📅' },
-  { label: 'Quotes', href: '/quotes', icon: '📋' },
-  { label: 'Invoices', href: '/invoices', icon: '🧾' },
-  { label: 'Jobs', href: '/jobs', icon: '🔧' },
-  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'AI Assistant', href: '/assistant', icon: '🤖' },
-  { label: 'AI Profit Analyzer', href: '/profit', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
   scheduled: { bg: '#fefce8', color: '#854d0e', border: '#fde047' },
@@ -37,17 +26,22 @@ interface Job {
   scheduled_date: string;
   status: string;
   notes: string;
+  photos?: string[];
 }
 
 export default function JobsPage() {
   const router = useRouter();
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [googleReviewLink, setGoogleReviewLink] = useState('');
   const [contractorName, setContractorName] = useState('');
+  const [userId, setUserId] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', notes: '' });
 
   useEffect(() => { loadJobs(); }, []);
@@ -55,6 +49,7 @@ export default function JobsPage() {
   async function loadJobs() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
+    setUserId(user.id);
     const { data: profile } = await supabase.from('profiles').select('google_review_link, company_name, full_name').eq('id', user.id).single();
     if (profile) {
       setGoogleReviewLink(profile.google_review_link || '');
@@ -96,42 +91,37 @@ export default function JobsPage() {
     }
   }
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+  async function uploadPhoto(jobId: string, file: File) {
+    setUploadingJobId(jobId);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('jobId', jobId);
+    formData.append('userId', userId);
+    const res = await fetch('/api/upload-job-photo', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+      setMessage('Photo uploaded!');
+      loadJobs();
+    } else {
+      setMessage('Upload failed: ' + data.error);
+    }
+    setUploadingJobId(null);
+    setTimeout(() => setMessage(''), 3000);
+  }
 
-      {/* Sidebar */}
-      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
-            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
-          </div>
-        </div>
-        <nav style={{ padding: '12px', flex: 1 }}>
-          {NAV_ITEMS.map(item => {
-            const isActive = item.href === '/jobs';
-            return (
-              <a key={item.href} href={item.href} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
-                textDecoration: 'none', fontSize: '13.5px',
-                fontWeight: isActive ? '600' : '400',
-                color: isActive ? '#16a34a' : '#6b7280',
-                background: isActive ? '#f0fdf4' : 'transparent',
-                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
-              }}>
-                <span>{item.icon}</span>{item.label}
-              </a>
-            );
-          })}
-        </nav>
-        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
-            Logout
-          </button>
-        </div>
-      </div>
+  async function deletePhoto(jobId: string, photoUrl: string) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    const photos = (job.photos || []).filter(p => p !== photoUrl);
+    await supabase.from('jobs').update({ photos }).eq('id', jobId);
+    loadJobs();
+  }
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <Sidebar activePath="/jobs" />
+
+      
 
       {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -216,7 +206,7 @@ export default function JobsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      {['Job Title', 'Customer', 'Phone', 'Scheduled Date', 'Status', 'Actions'].map(h => (
+                      {['Job Title', 'Customer', 'Phone', 'Scheduled Date', 'Status', 'Photos', 'Actions'].map(h => (
                         <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                       ))}
                     </tr>
@@ -225,7 +215,8 @@ export default function JobsPage() {
                     {jobs.map(job => {
                       const statusStyle = STATUS_STYLES[job.status] || { bg: '#f9fafb', color: '#6b7280', border: '#e5e7eb' };
                       return (
-                        <tr key={job.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                        <React.Fragment key={job.id}>
+                        <tr style={{ borderBottom: expandedJobId === job.id ? 'none' : '1px solid #f9fafb' }}>
                           <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{job.title}</td>
                           <td style={{ padding: '14px 24px', color: '#374151', fontSize: '14px' }}>{job.customer_name}</td>
                           <td style={{ padding: '14px 24px', color: '#6b7280', fontSize: '13px' }}>{job.customer_phone || '—'}</td>
@@ -234,6 +225,14 @@ export default function JobsPage() {
                             <span style={{ background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600' }}>
                               {job.status}
                             </span>
+                          </td>
+                          <td style={{ padding: '14px 24px' }}>
+                            <button
+                              onClick={() => setExpandedJobId(expandedJobId === job.id ? null : job.id)}
+                              style={{ padding: '5px 10px', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', color: '#374151' }}
+                            >
+                              {(job.photos?.length || 0)} photo{(job.photos?.length || 0) !== 1 ? 's' : ''}
+                            </button>
                           </td>
                           <td style={{ padding: '14px 24px' }}>
                             <div style={{ display: 'flex', gap: '8px' }}>
@@ -252,6 +251,48 @@ export default function JobsPage() {
                             </div>
                           </td>
                         </tr>
+                        {expandedJobId === job.id && (
+                          <tr style={{ borderBottom: '1px solid #f9fafb' }}>
+                            <td colSpan={7} style={{ padding: '0 24px 16px' }}>
+                              <div style={{ background: '#f5f5f4', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Photos</span>
+                                  <label style={{ padding: '6px 12px', background: '#16a34a', color: 'white', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                    {uploadingJobId === job.id ? 'Uploading...' : '+ Add Photo'}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      style={{ display: 'none' }}
+                                      onChange={e => {
+                                        const file = e.target.files?.[0];
+                                        if (file) uploadPhoto(job.id, file);
+                                        e.target.value = '';
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                                {(!job.photos || job.photos.length === 0) ? (
+                                  <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>No photos yet. Add before/after shots for this job.</p>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    {job.photos.map((url, i) => (
+                                      <div key={i} style={{ position: 'relative' }}>
+                                        <img src={url} alt={`Job photo ${i + 1}`} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                                        <button
+                                          onClick={() => deletePhoto(job.id, url)}
+                                          style={{ position: 'absolute', top: '4px', right: '4px', width: '18px', height: '18px', background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', color: 'white', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        </React.Fragment>
                       );
                     })}
                   </tbody>

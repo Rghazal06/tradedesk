@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TradeDesk Icon Generator</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #f5f5f4; padding: 40px; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  p { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+  .icons { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+  .icon-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: center; }
+  .icon-card canvas { display: block; margin: 0 auto 12px; border-radius: 6px; }
+  .icon-card p { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: #111; }
+  .icon-card small { display: block; color: #9ca3af; font-size: 11px; margin-bottom: 10px; }
+  a.btn { display: inline-block; padding: 8px 16px; background: #16a34a; color: white; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; }
+  #instructions { background: #0f0f0f; color: #d1d5db; border-radius: 10px; padding: 20px 24px; font-size: 13px; line-height: 1.8; }
+  #instructions code { background: #1f1f1f; padding: 2px 6px; border-radius: 4px; color: #86efac; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h1>TradeDesk Icon Generator</h1>
+<p>Click each download link, save to <code>public/icons/</code>, then replace <code>app/favicon.ico</code> with the 32px version.</p>
+
+<div class="icons" id="icons"></div>
+
+<div id="instructions">
+  <strong style="color:white">Steps after downloading:</strong><br>
+  1. Save each file to <code>C:\Users\rayan\tradedesk\public\icons\</code><br>
+  2. For <code>favicon.ico</code> — rename <code>favicon-32.png</code> to <code>favicon.ico</code> and place in <code>app\</code><br>
+  3. Delete this <code>generate-icons.html</code> file from your project
+</div>
+
+<script>
+const ICONS = [
+  { name: 'icon-192.png',         size: 192,  display: 96 },
+  { name: 'icon-512.png',         size: 512,  display: 96 },
+  { name: 'apple-touch-icon.png', size: 180,  display: 90 },
+  { name: 'favicon-32.png',       size: 32,   display: 64 },
+];
+
+function drawAngleMark(canvas, size) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = size;
+  canvas.height = size;
+  const S = size;
+  const p = Math.max(2, Math.floor(S / 7));
+  const t = Math.max(2, Math.floor(S / 8));
+
+  // Background
+  ctx.fillStyle = '#161616';
+  ctx.fillRect(0, 0, S, S);
+
+  // Vertical bar
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(p, p, t, S - 2 * p);
+
+  // Horizontal bar
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(p, S - p - t, S - 2 * p, t);
+
+  // Green accent at inner elbow
+  ctx.fillStyle = '#16a34a';
+  ctx.fillRect(p + t, S - p - t, t, t);
+}
+
+const container = document.getElementById('icons');
+
+ICONS.forEach(({ name, size, display }) => {
+  const realCanvas = document.createElement('canvas');
+  drawAngleMark(realCanvas, size);
+
+  // Display canvas (scaled for preview)
+  const preview = document.createElement('canvas');
+  preview.width = display;
+  preview.height = display;
+  const pctx = preview.getContext('2d');
+  pctx.drawImage(realCanvas, 0, 0, display, display);
+
+  const card = document.createElement('div');
+  card.className = 'icon-card';
+
+  const label = document.createElement('p');
+  label.textContent = name;
+
+  const sizeLabel = document.createElement('small');
+  sizeLabel.textContent = `${size} × ${size}`;
+
+  const link = document.createElement('a');
+  link.className = 'btn';
+  link.textContent = 'Download';
+  link.download = name;
+  link.href = realCanvas.toDataURL('image/png');
+
+  card.appendChild(preview);
+  card.appendChild(label);
+  card.appendChild(sizeLabel);
+  card.appendChild(link);
+  container.appendChild(card);
+});
+</script>
+</body>
+</html>

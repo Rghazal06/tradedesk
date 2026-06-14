@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { generateQuotePDF, quoteRowToPdfData, type QuoteDbRow } from "../../lib/generatePDF";
 import { supabase } from "../../lib/supabase";
+import Sidebar from '../../components/Sidebar';
 
 type QuoteRow = QuoteDbRow & {
   id: string;
@@ -13,18 +14,6 @@ type QuoteRow = QuoteDbRow & {
   created_at: string;
 };
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
-  { label: 'Appointments', href: '/appointments', icon: '📅' },
-  { label: 'Quotes', href: '/quotes', icon: '📋' },
-  { label: 'Invoices', href: '/invoices', icon: '🧾' },
-  { label: 'Jobs', href: '/jobs', icon: '🔧' },
-  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'AI Assistant', href: '/assistant', icon: '🤖' },
-  { label: 'AI Profit Analyzer', href: '/profit', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
 
 const formatCurrency = (value: number) =>
   (value ?? 0).toLocaleString("en-CA", { style: "currency", currency: "CAD" });
@@ -80,41 +69,10 @@ export default function QuotesPage() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <Sidebar activePath="/quotes" />
 
-      {/* Sidebar */}
-      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
-            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
-          </div>
-        </div>
-        <nav style={{ padding: '12px', flex: 1 }}>
-          {NAV_ITEMS.map(item => {
-            const isActive = item.href === '/quotes';
-            return (
-              <a key={item.href} href={item.href} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
-                textDecoration: 'none', fontSize: '13.5px',
-                fontWeight: isActive ? '600' : '400',
-                color: isActive ? '#16a34a' : '#6b7280',
-                background: isActive ? '#f0fdf4' : 'transparent',
-                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
-              }}>
-                <span>{item.icon}</span>{item.label}
-              </a>
-            );
-          })}
-        </nav>
-        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
-            Logout
-          </button>
-        </div>
-      </div>
+      
 
       {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

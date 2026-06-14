@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const { customerEmail, customerName, invoiceTotal, invoiceId, contractorName, contractorPhone, paymentLink } = await req.json();
 
     const { data, error } = await resend.emails.send({
-      from: 'TradeDesk <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'TradeDesk <onboarding@resend.dev>',
       to: customerEmail,
       subject: `Payment Reminder — Invoice for $${invoiceTotal}`,
       html: `

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import Sidebar from '../../components/Sidebar';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -147,51 +148,10 @@ export default function AppointmentsPage() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <Sidebar activePath="/appointments" />
+
       
-      {/* Sidebar */}
-      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
-            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
-          </div>
-        </div>
-        <nav style={{ padding: '12px', flex: 1 }}>
-          {[
-            { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
-            { label: 'Appointments', href: '/appointments', icon: '📅' },
-            { label: 'Quotes', href: '/quotes', icon: '📋' },
-            { label: 'Invoices', href: '/invoices', icon: '🧾' },
-            { label: 'Jobs', href: '/jobs', icon: '🔧' },
-            { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
-            { label: 'Clients', href: '/clients', icon: '👥' },
-            { label: 'AI Assistant', href: '/assistant', icon: '🤖' },
-            { label: 'AI Profit Analyzer', href: '/profit', icon: '📈' },
-            { label: 'Settings', href: '/settings', icon: '⚙️' },
-          ].map(item => {
-            const isActive = item.href === '/appointments';
-            return (
-              <a key={item.href} href={item.href} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
-                textDecoration: 'none', fontSize: '13.5px', fontWeight: isActive ? '600' : '400',
-                color: isActive ? '#16a34a' : '#6b7280',
-                background: isActive ? '#f0fdf4' : 'transparent',
-                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
-              }}>
-                <span>{item.icon}</span>{item.label}
-              </a>
-            );
-          })}
-        </nav>
-        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
-            Logout
-          </button>
-        </div>
-      </div>
 
       {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -422,8 +382,8 @@ function AppointmentCard({ apt, onStatusChange, onReminder, onDelete }: {
         <button onClick={() => onReminder(apt)} style={{ padding: '6px 14px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
           {apt.reminder_sent ? '✓ Reminded' : '📱 Remind'}
         </button>
-        <button onClick={() => onDelete(apt.id)} style={{ padding: '6px 10px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
-          🗑️
+        <button onClick={() => onDelete(apt.id)} style={{ padding: '6px 10px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+          Delete
         </button>
       </div>
     </div>

@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       if (!email) continue;
 
       await resend.emails.send({
-        from: 'TradeDesk <onboarding@resend.dev>',
+        from: process.env.RESEND_FROM_EMAIL || 'TradeDesk <onboarding@resend.dev>',
         to: email,
         subject: `⚠️ WSIB Payment Due Soon — $${entry.premium_owing?.toFixed(2)}`,
         html: `

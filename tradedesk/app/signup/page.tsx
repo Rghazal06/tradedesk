@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useState, useEffect, Suspense } from "react";
 import { supabase } from "../../lib/supabase";
 
 const tradeOptions = ["Electrician", "Plumber", "HVAC", "General Contractor", "Roofer", "Other"];
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +17,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const refCode = searchParams.get('ref') || '';
 
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,8 +28,33 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) { setErrorMessage(error.message); setIsLoading(false); return; }
     if (!data.user) { setErrorMessage("Unable to create account. Please try again."); setIsLoading(false); return; }
-    const { error: profileError } = await supabase.from("profiles").insert({ id: data.user.id, full_name: fullName, trade_type: tradeType, email });
+    // Generate unique referral code from name + year
+    const nameSlug = fullName.replace(/\s+/g, '').toUpperCase().slice(0, 8);
+    const referralCode = `${nameSlug}${new Date().getFullYear()}`;
+
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: data.user.id, full_name: fullName, trade_type: tradeType, email,
+      referral_code: referralCode,
+      trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    });
     if (profileError) { setErrorMessage(profileError.message); setIsLoading(false); return; }
+
+    // Apply referral code if present
+    if (refCode) {
+      await fetch('/api/referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: data.user.id, referralCode: refCode }),
+      });
+    }
+
+    // Trigger onboarding email sequence
+    await fetch('/api/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: data.user.id, email, fullName }),
+    }).catch(() => {});
+
     setSuccessMessage("Account created! Redirecting...");
     setIsLoading(false);
     setTimeout(() => router.push("/dashboard"), 900);
@@ -45,7 +72,7 @@ export default function SignupPage() {
       {/* Navbar */}
       <nav style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
           <span style={{ fontWeight: '700', fontSize: '18px', color: '#111' }}>TradeDesk</span>
         </Link>
         <Link href="/login" style={{ padding: '8px 18px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: '#374151', textDecoration: 'none' }}>
@@ -59,7 +86,7 @@ export default function SignupPage() {
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{ width: '48px', height: '48px', background: '#16a34a', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '18px', margin: '0 auto 16px' }}>TD</div>
+            <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg></div>
             <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#111', margin: '0 0 8px', letterSpacing: '-0.5px' }}>Create your account</h1>
             <p style={{ color: '#6b7280', fontSize: '15px', margin: 0 }}>Start your 14-day free trial. No credit card required.</p>
           </div>
@@ -143,5 +170,13 @@ export default function SignupPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '-apple-system, sans-serif', color: '#6b7280' }}>Loading...</div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

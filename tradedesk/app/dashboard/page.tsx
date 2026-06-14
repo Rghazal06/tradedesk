@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import Sidebar from '../../components/Sidebar';
 import NotificationBell from '../../components/NotificationBell';
 
 const supabase = createBrowserClient(
@@ -10,33 +11,24 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/dashboard', icon: '⚡' },
-  { label: 'Appointments', href: '/appointments', icon: '📅' },
-  { label: 'Quotes', href: '/quotes', icon: '📋' },
-  { label: 'Invoices', href: '/invoices', icon: '🧾' },
-  { label: 'Jobs', href: '/jobs', icon: '🔧' },
-  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️' },
-  { label: 'Clients', href: '/clients', icon: '👥' },
-  { label: 'AI Assistant', href: '/assistant', icon: '🤖' },
-  { label: 'AI Profit Analyzer', href: '/profit', icon: '📈' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-];
+const FF = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState({ quotes: 0, unpaidInvoices: 0, activeJobs: 0, revenue: 0 });
-  const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({ revenue: 0, unpaid: 0, activeJobs: 0, quotesMonth: 0 });
+  const [unpaidInvoices, setUnpaidInvoices] = useState<any[]>([]);
+  const [todayAppts, setTodayAppts] = useState<any[]>([]);
+  const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
+  const [wsibDue, setWsibDue] = useState<any[]>([]);
 
-  useEffect(() => { loadDashboard(); }, []);
+  useEffect(() => { load(); }, []);
 
-  async function loadDashboard() {
+  async function load() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
-
     setUserId(user.id);
 
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
@@ -44,157 +36,216 @@ export default function DashboardPage() {
 
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const todayStr = now.toISOString().split('T')[0];
+    const in7Days = new Date(now.getTime() + 7 * 86400000).toISOString().split('T')[0];
 
-    const [quotes, invoices, jobs, paidInvoices, recentQ] = await Promise.all([
-      supabase.from('quotes').select('id').eq('user_id', user.id).gte('created_at', firstOfMonth),
-      supabase.from('invoices').select('id').eq('user_id', user.id).eq('status', 'unpaid'),
-      supabase.from('jobs').select('id').eq('user_id', user.id).in('status', ['scheduled', 'in progress']),
+    const [paidInvoices, unpaidInvs, activeJobsRes, quotesRes, recentQ, appts, wsib] = await Promise.all([
       supabase.from('invoices').select('total').eq('user_id', user.id).eq('status', 'paid').gte('created_at', firstOfMonth),
-      supabase.from('quotes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+      supabase.from('invoices').select('id, customer_name, total, created_at, payment_link').eq('user_id', user.id).eq('status', 'unpaid').order('created_at', { ascending: true }).limit(5),
+      supabase.from('jobs').select('id').eq('user_id', user.id).in('status', ['scheduled', 'in progress']),
+      supabase.from('quotes').select('id').eq('user_id', user.id).gte('created_at', firstOfMonth),
+      supabase.from('quotes').select('id, customer_name, total, status, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),
+      supabase.from('appointments').select('id, customer_name, scheduled_time, job_type, status').eq('user_id', user.id).eq('scheduled_date', todayStr).order('scheduled_time', { ascending: true }),
+      supabase.from('wsib_entries').select('id, premium_owing, due_date').eq('user_id', user.id).eq('status', 'pending').lte('due_date', in7Days).order('due_date', { ascending: true }),
     ]);
 
-    const revenue = paidInvoices.data?.reduce((sum, inv) => sum + (inv.total || 0), 0) || 0;
-    setStats({
-      quotes: quotes.data?.length || 0,
-      unpaidInvoices: invoices.data?.length || 0,
-      activeJobs: jobs.data?.length || 0,
-      revenue,
-    });
+    const revenue = paidInvoices.data?.reduce((s, i) => s + (i.total || 0), 0) || 0;
+    setMetrics({ revenue, unpaid: unpaidInvs.data?.length || 0, activeJobs: activeJobsRes.data?.length || 0, quotesMonth: quotesRes.data?.length || 0 });
+    setUnpaidInvoices(unpaidInvs.data || []);
+    setTodayAppts(appts.data || []);
     setRecentQuotes(recentQ.data || []);
+    setWsibDue(wsib.data || []);
     setLoading(false);
   }
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      
-      {/* Sidebar */}
-      <div style={{ width: '240px', minWidth: '240px', background: 'white', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', background: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '13px' }}>TD</div>
-            <span style={{ fontWeight: '700', fontSize: '16px', color: '#111' }}>TradeDesk</span>
-          </div>
-        </div>
-        <nav style={{ padding: '12px', flex: 1 }}>
-          {NAV_ITEMS.map(item => {
-            const isActive = item.href === '/dashboard';
-            return (
-              <a key={item.href} href={item.href} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '9px 12px', borderRadius: '8px', marginBottom: '2px',
-                textDecoration: 'none', fontSize: '13.5px',
-                fontWeight: isActive ? '600' : '400',
-                color: isActive ? '#16a34a' : '#6b7280',
-                background: isActive ? '#f0fdf4' : 'transparent',
-                border: isActive ? '1px solid #bbf7d0' : '1px solid transparent',
-              }}>
-                <span>{item.icon}</span>{item.label}
-              </a>
-            );
-          })}
-        </nav>
-        <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            style={{ width: '100%', padding: '8px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
-            Logout
-          </button>
-        </div>
-      </div>
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dateStr = new Date().toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' });
 
-      {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        
-        {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+  const statusStyle: Record<string, { color: string; bg: string }> = {
+    draft:    { color: '#6b7280', bg: '#f3f4f6' },
+    sent:     { color: '#2563eb', bg: '#eff6ff' },
+    approved: { color: '#16a34a', bg: '#f0fdf4' },
+    declined: { color: '#dc2626', bg: '#fef2f2' },
+  };
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: FF }}>
+      <Sidebar activePath="/dashboard" />
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
+        {/* Page header */}
+        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0 32px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
-            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>
-              {userName ? `Welcome back, ${userName} 👋` : 'Dashboard'}
-            </h1>
-            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Here's what's happening with your business</p>
+            <span style={{ fontSize: '13px', color: '#6b7280' }}>{dateStr}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {userId && <NotificationBell userId={userId} />}
-            <a href="/quotes/new" style={{
-              padding: '10px 20px', background: '#16a34a', color: 'white',
-              borderRadius: '8px', fontWeight: '600', fontSize: '14px',
-              textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
-            }}>+ New Quote</a>
+            <a href="/quotes/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: '#16a34a', color: 'white', borderRadius: '6px', fontWeight: '600', fontSize: '13px', textDecoration: 'none', letterSpacing: '-0.1px' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="6" y1="1" x2="6" y2="11" stroke="white" strokeWidth="1.8" strokeLinecap="round"/><line x1="1" y1="6" x2="11" y2="6" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
+              New Quote
+            </a>
           </div>
         </div>
 
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+
           {loading ? (
-            <div style={{ color: '#9ca3af', textAlign: 'center', paddingTop: '80px' }}>Loading...</div>
+            <div style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</div>
           ) : (
             <>
-              {/* Stat Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                {[
-                  { label: 'Quotes This Month', value: stats.quotes, color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe', icon: '📋' },
-                  { label: 'Unpaid Invoices', value: stats.unpaidInvoices, color: '#ef4444', bg: '#fef2f2', border: '#fecaca', icon: '⚠️' },
-                  { label: 'Active Jobs', value: stats.activeJobs, color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe', icon: '🔧' },
-                  { label: 'Revenue This Month', value: `$${stats.revenue.toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: '💰' },
-                ].map(stat => (
-                  <div key={stat.label} style={{ background: stat.bg, border: `1px solid ${stat.border}`, borderRadius: '12px', padding: '20px' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '8px' }}>{stat.icon}</div>
-                    <p style={{ color: '#6b7280', fontSize: '12px', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>{stat.label}</p>
-                    <p style={{ color: stat.color, fontSize: '26px', fontWeight: '800', margin: 0 }}>{stat.value}</p>
-                  </div>
-                ))}
+              {/* Greeting */}
+              <div style={{ marginBottom: '28px' }}>
+                <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#0a0a0a', margin: '0 0 2px', letterSpacing: '-0.8px' }}>
+                  {greeting}{userName ? `, ${userName}` : ''}.
+                </h1>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
+                  {todayAppts.length > 0 ? `You have ${todayAppts.length} appointment${todayAppts.length > 1 ? 's' : ''} today.` : metrics.unpaid > 0 ? `${metrics.unpaid} invoice${metrics.unpaid > 1 ? 's' : ''} waiting on payment.` : 'Everything looks good.'}
+                </p>
               </div>
 
-              {/* Quick Actions */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '32px' }}>
-                {[
-                  { label: 'New Quote', href: '/quotes/new', icon: '✨', desc: 'AI-powered' },
-                  { label: 'Appointments', href: '/appointments', icon: '📅', desc: 'Schedule jobs' },
-                  { label: 'WSIB Tracking', href: '/wsib', icon: '🛡️', desc: 'Ontario compliance' },
-                  { label: 'AI Analyzer', href: '/profit', icon: '🤖', desc: 'Business insights' },
-                ].map(action => (
-                  <a key={action.href} href={action.href} style={{
-                    background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px',
-                    padding: '16px', textDecoration: 'none', display: 'block',
-                  }}>
-                    <span style={{ fontSize: '22px', display: 'block', marginBottom: '6px' }}>{action.icon}</span>
-                    <p style={{ color: '#111', fontSize: '13px', fontWeight: '600', margin: '0 0 2px' }}>{action.label}</p>
-                    <p style={{ color: '#9ca3af', fontSize: '11px', margin: 0 }}>{action.desc}</p>
-                  </a>
-                ))}
-              </div>
-
-              {/* Recent Quotes */}
-              <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>Recent Quotes</h2>
-                  <a href="/quotes" style={{ color: '#16a34a', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>View all →</a>
+              {/* Alerts — only shown when there's something to act on */}
+              {(unpaidInvoices.length > 0 || wsibDue.length > 0) && (
+                <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {wsibDue.map(w => (
+                    <a key={w.id} href="/wsib" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', textDecoration: 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626', flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#7f1d1d' }}>WSIB payment due {new Date(w.due_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })} — ${w.premium_owing?.toFixed(2)}</span>
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>File now →</span>
+                    </a>
+                  ))}
+                  {unpaidInvoices.slice(0, 2).map(inv => {
+                    const daysOld = Math.floor((Date.now() - new Date(inv.created_at).getTime()) / 86400000);
+                    if (daysOld < 7) return null;
+                    return (
+                      <a key={inv.id} href="/invoices" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px 16px', textDecoration: 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: '#78350f' }}>{inv.customer_name} — ${inv.total?.toFixed(2)} overdue ({daysOld} days)</span>
+                        </div>
+                        <span style={{ fontSize: '12px', color: '#d97706', fontWeight: '600' }}>Send reminder →</span>
+                      </a>
+                    );
+                  })}
                 </div>
-                {recentQuotes.length === 0 ? (
-                  <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-                    No quotes yet. <a href="/quotes/new" style={{ color: '#16a34a' }}>Create your first quote</a>
+              )}
+
+              {/* Metrics row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e5e7eb', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden', marginBottom: '24px' }}>
+                {[
+                  { label: 'Revenue this month', value: `$${metrics.revenue.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, sub: 'collected', color: '#16a34a' },
+                  { label: 'Unpaid invoices', value: metrics.unpaid.toString(), sub: 'outstanding', color: metrics.unpaid > 0 ? '#dc2626' : '#0a0a0a' },
+                  { label: 'Active jobs', value: metrics.activeJobs.toString(), sub: 'in progress', color: '#0a0a0a' },
+                  { label: 'Quotes sent', value: metrics.quotesMonth.toString(), sub: 'this month', color: '#0a0a0a' },
+                ].map(m => (
+                  <div key={m.label} style={{ background: 'white', padding: '20px 22px' }}>
+                    <p style={{ fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '0 0 8px' }}>{m.label}</p>
+                    <p style={{ fontSize: '28px', fontWeight: '800', color: m.color, margin: '0 0 2px', letterSpacing: '-1px', lineHeight: 1 }}>{m.value}</p>
+                    <p style={{ fontSize: '11px', color: '#d1d5db', margin: 0 }}>{m.sub}</p>
                   </div>
-                ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                        {['Customer', 'Total', 'Date', 'Action'].map(h => (
-                          <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentQuotes.map(quote => (
-                        <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                          <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{quote.customer_name || '—'}</td>
-                          <td style={{ padding: '14px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>${quote.total?.toFixed(2)}</td>
-                          <td style={{ padding: '14px 24px', color: '#6b7280', fontSize: '13px' }}>{new Date(quote.created_at).toLocaleDateString('en-CA')}</td>
-                          <td style={{ padding: '14px 24px' }}>
-                            <a href="/quotes" style={{ color: '#16a34a', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>View →</a>
-                          </td>
+                ))}
+              </div>
+
+              {/* Two-column: Recent quotes + Today */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
+
+                {/* Recent quotes */}
+                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Recent Quotes</span>
+                    <a href="/quotes" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '500' }}>View all</a>
+                  </div>
+                  {recentQuotes.length === 0 ? (
+                    <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 12px' }}>No quotes yet</p>
+                      <a href="/quotes/new" style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', textDecoration: 'none' }}>Create your first quote →</a>
+                    </div>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          {['Customer', 'Amount', 'Date', 'Status'].map(h => (
+                            <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' }}>{h}</th>
+                          ))}
                         </tr>
+                      </thead>
+                      <tbody>
+                        {recentQuotes.map(q => {
+                          const s = statusStyle[q.status] || { color: '#6b7280', bg: '#f3f4f6' };
+                          return (
+                            <tr key={q.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                              <td style={{ padding: '12px 20px', fontSize: '13px', fontWeight: '500', color: '#0a0a0a' }}>{q.customer_name || '—'}</td>
+                              <td style={{ padding: '12px 20px', fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>${q.total?.toFixed(2)}</td>
+                              <td style={{ padding: '12px 20px', fontSize: '12px', color: '#9ca3af' }}>{new Date(q.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}</td>
+                              <td style={{ padding: '12px 20px' }}>
+                                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', color: s.color, background: s.bg }}>
+                                  {q.status || 'draft'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Right column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                  {/* Today's appointments */}
+                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Today</span>
+                      <a href="/appointments" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '500' }}>Schedule</a>
+                    </div>
+                    {todayAppts.length === 0 ? (
+                      <div style={{ padding: '24px 20px', textAlign: 'center' }}>
+                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>No appointments today</p>
+                      </div>
+                    ) : (
+                      <div>
+                        {todayAppts.map((a, i) => (
+                          <div key={a.id} style={{ padding: '12px 20px', borderBottom: i < todayAppts.length - 1 ? '1px solid #f9fafb' : 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '36px', height: '36px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <span style={{ fontSize: '11px', fontWeight: '700', color: '#16a34a' }}>{a.scheduled_time?.slice(0, 5) || '—'}</span>
+                            </div>
+                            <div>
+                              <p style={{ fontSize: '13px', fontWeight: '600', color: '#0a0a0a', margin: '0 0 1px' }}>{a.customer_name}</p>
+                              <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{a.job_type}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick actions */}
+                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Quick Actions</span>
+                    </div>
+                    <div>
+                      {[
+                        { label: 'Create invoice', href: '/invoices', desc: 'Bill a completed job' },
+                        { label: 'Log WSIB hours', href: '/wsib', desc: 'Record reportable earnings' },
+                        { label: 'Book appointment', href: '/appointments', desc: 'Schedule with a customer' },
+                        { label: 'Scan a receipt', href: '/receipts', desc: 'Capture expenses on site' },
+                      ].map((action, i, arr) => (
+                        <a key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 20px', borderBottom: i < arr.length - 1 ? '1px solid #f9fafb' : 'none', textDecoration: 'none' }}>
+                          <div>
+                            <p style={{ fontSize: '13px', fontWeight: '500', color: '#0a0a0a', margin: '0 0 1px' }}>{action.label}</p>
+                            <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{action.desc}</p>
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#d1d5db' }}><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </a>
                       ))}
-                    </tbody>
-                  </table>
-                )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           )}
