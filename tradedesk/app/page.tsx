@@ -30,14 +30,18 @@ export default function LandingPage() {
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
           <span style={{ fontWeight: '800', fontSize: '17px', letterSpacing: '-0.3px' }}>TradeDesk</span>
         </div>
-        <div className="td-nav-links" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-          <a href="#why-ontario" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Why Ontario</a>
-          <a href="#features" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Features</a>
-          <a href="#pricing" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Pricing</a>
-          <Link href="/login" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
-          <Link href="/signup" style={{ padding: '8px 18px', background: '#16a34a', color: 'white', borderRadius: '6px', fontSize: '14px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)' }}>
-            Start Free Trial
-          </Link>
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+          <div className="td-nav-links" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+            <a href="#why-ontario" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Why Ontario</a>
+            <a href="#features" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Features</a>
+            <a href="#pricing" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Pricing</a>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Link href="/login" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
+            <Link href="/signup" style={{ padding: '8px 18px', background: '#16a34a', color: 'white', borderRadius: '6px', fontSize: '14px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)' }}>
+              Start Free Trial
+            </Link>
+          </div>
         </div>
       </nav>
 
