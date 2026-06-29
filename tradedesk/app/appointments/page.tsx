@@ -173,7 +173,7 @@ export default function AppointmentsPage() {
                   fontSize: '13px',
                   boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 }}>
-                  {v === 'list' ? '☰ List' : '📅 Calendar'}
+                  {v === 'list' ? 'List' : 'Calendar'}
                 </button>
               ))}
             </div>
@@ -268,11 +268,13 @@ export default function AppointmentsPage() {
 
               {appointments.length === 0 && !loading && (
                 <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#374151', margin: '0 0 8px' }}>No appointments yet</h3>
-                  <p style={{ margin: '0 0 20px' }}>Book your first appointment to get started</p>
-                  <button onClick={() => setShowForm(true)} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
-                    + Book Appointment
+                  <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="3" width="18" height="17" rx="2" stroke="#9ca3af" strokeWidth="1.4"/><line x1="2" y1="8" x2="20" y2="8" stroke="#9ca3af" strokeWidth="1.4"/><line x1="7" y1="1" x2="7" y2="5" stroke="#9ca3af" strokeWidth="1.4" strokeLinecap="round"/><line x1="15" y1="1" x2="15" y2="5" stroke="#9ca3af" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                  </div>
+                  <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#374151', margin: '0 0 6px' }}>No appointments yet</h3>
+                  <p style={{ margin: '0 0 20px', fontSize: '13px' }}>Book your first appointment to get started</p>
+                  <button onClick={() => setShowForm(true)} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                    Book Appointment
                   </button>
                 </div>
               )}
@@ -362,9 +364,9 @@ function AppointmentCard({ apt, onStatusChange, onReminder, onDelete }: {
             {apt.job_type && <span style={{ background: '#f3f4f6', color: '#374151', borderRadius: '100px', padding: '2px 10px', fontSize: '11px' }}>{apt.job_type}</span>}
           </div>
           <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#6b7280' }}>
-            {apt.customer_phone && <span>📞 {apt.customer_phone}</span>}
-            {apt.customer_email && <span>✉️ {apt.customer_email}</span>}
-            {apt.notes && <span>📝 {apt.notes}</span>}
+            {apt.customer_phone && <span>{apt.customer_phone}</span>}
+            {apt.customer_email && <span>{apt.customer_email}</span>}
+            {apt.notes && <span>{apt.notes}</span>}
           </div>
         </div>
       </div>
@@ -380,7 +382,7 @@ function AppointmentCard({ apt, onStatusChange, onReminder, onDelete }: {
           </button>
         )}
         <button onClick={() => onReminder(apt)} style={{ padding: '6px 14px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-          {apt.reminder_sent ? '✓ Reminded' : '📱 Remind'}
+          {apt.reminder_sent ? 'Reminded' : 'Send Reminder'}
         </button>
         <button onClick={() => onDelete(apt.id)} style={{ padding: '6px 10px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
           Delete

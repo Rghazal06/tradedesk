@@ -1,11 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getAuthUser } from '../../../lib/apiAuth';
+import { rateLimit } from '../../../lib/rateLimit';
+import { sanitizeString } from '../../../lib/validate';
 
 export async function POST(req: NextRequest) {
+  const user = await getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 20 email reminders per hour per user
+  if (!rateLimit(`invoice-reminder-${user.id}`, 20, 3600000)) {
+    return NextResponse.json({ error: 'Too many requests. Please wait.' }, { status: 429 });
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   try {
-    const { customerEmail, customerName, invoiceTotal, invoiceId, contractorName, contractorPhone, paymentLink } = await req.json();
+    const body = await req.json();
+    const customerEmail = sanitizeString(body.customerEmail || '', 200);
+    const customerName = sanitizeString(body.customerName || '', 100);
+    const invoiceTotal = sanitizeString(String(body.invoiceTotal || ''), 20);
+    const invoiceId = sanitizeString(body.invoiceId || '', 36);
+    const contractorName = sanitizeString(body.contractorName || '', 100);
+    const contractorPhone = sanitizeString(body.contractorPhone || '', 20);
+    const paymentLink = sanitizeString(body.paymentLink || '', 500);
+
+    if (!customerEmail) {
+      return NextResponse.json({ error: 'Customer email is required' }, { status: 400 });
+    }
 
     const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'TradeDesk <onboarding@resend.dev>',
@@ -20,7 +44,7 @@ export async function POST(req: NextRequest) {
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 40px 20px;">
           <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
-            
+
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 32px; text-align: center;">
               <div style="display: inline-block; background: white; border-radius: 10px; padding: 8px 16px; margin-bottom: 16px;">
@@ -49,7 +73,7 @@ export async function POST(req: NextRequest) {
               ${paymentLink ? `
               <div style="text-align: center; margin-bottom: 24px;">
                 <a href="${paymentLink}" style="display: inline-block; background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
-                  Pay Now →
+                  Pay Now
                 </a>
               </div>
               ` : ''}
@@ -74,9 +98,10 @@ export async function POST(req: NextRequest) {
       `,
     });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: 'Failed to send reminder.' }, { status: 400 });
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error('send-invoice-reminder error:', error);
+    return NextResponse.json({ error: 'Failed to send reminder.' }, { status: 500 });
   }
 }

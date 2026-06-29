@@ -1,53 +1,60 @@
 import Link from 'next/link';
 
+const FF = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
 export default function LandingPage() {
   return (
-    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: '#ffffff', color: '#111' }}>
+    <div style={{ fontFamily: FF, background: '#ffffff', color: '#111' }}>
 
       {/* Navbar */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
           <span style={{ fontWeight: '800', fontSize: '17px', letterSpacing: '-0.3px' }}>TradeDesk</span>
         </div>
         <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+          <a href="#why-ontario" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Why Ontario</a>
           <a href="#features" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Features</a>
           <a href="#pricing" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Pricing</a>
           <Link href="/login" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
-          <Link href="/signup" style={{ padding: '8px 18px', background: '#16a34a', color: 'white', borderRadius: '6px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
+          <Link href="/signup" style={{ padding: '8px 18px', background: '#16a34a', color: 'white', borderRadius: '6px', fontSize: '14px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)' }}>
             Start Free Trial
           </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '80px 48px 64px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }}>
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '88px 48px 72px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '72px', alignItems: 'center' }}>
         <div>
-          <div style={{ display: 'inline-block', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '4px 14px', fontSize: '12px', fontWeight: '700', color: '#15803d', marginBottom: '24px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
-            Built for Ontario Contractors
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '5px 14px', fontSize: '12px', fontWeight: '700', color: '#15803d', marginBottom: '28px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="5" fill="#16a34a"/></svg>
+            Made in Ontario, for Ontario
           </div>
-          <h1 style={{ fontSize: '52px', fontWeight: '900', lineHeight: '1.1', letterSpacing: '-2px', color: '#0a0a0a', margin: '0 0 20px' }}>
-            Run your trade<br />
-            business from<br />
-            <span style={{ color: '#16a34a' }}>one place.</span>
+          <h1 style={{ fontSize: '54px', fontWeight: '900', lineHeight: '1.05', letterSpacing: '-2.5px', color: '#0a0a0a', margin: '0 0 22px' }}>
+            The only platform<br />
+            built for<br />
+            <span style={{ color: '#16a34a' }}>Ontario trades law.</span>
           </h1>
-          <p style={{ fontSize: '18px', color: '#4b5563', lineHeight: '1.7', margin: '0 0 36px', maxWidth: '420px' }}>
-            Quotes, invoices, WSIB tracking, and payments built specifically for electricians, plumbers, HVAC techs, and contractors in Ontario.
+          <p style={{ fontSize: '18px', color: '#4b5563', lineHeight: '1.75', margin: '0 0 16px', maxWidth: '440px' }}>
+            WSIB tracking, HST auto-calculation, and Canadian compliance built in — not bolted on. For electricians, plumbers, HVAC techs, roofers, and contractors across Ontario.
+          </p>
+          <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 36px', maxWidth: '420px' }}>
+            Jobber doesn't know what WSIB is. We do.
           </p>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' as const }}>
-            <Link href="/signup" style={{ padding: '14px 28px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '16px', textDecoration: 'none', boxShadow: '0 4px 16px rgba(22,163,74,0.35)' }}>
+            <Link href="/signup" style={{ padding: '14px 30px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '800', fontSize: '16px', textDecoration: 'none', boxShadow: '0 4px 20px rgba(22,163,74,0.35)', letterSpacing: '-0.2px' }}>
               Start 14-day free trial
             </Link>
-            <span style={{ color: '#9ca3af', fontSize: '13px' }}>No credit card required</span>
+            <span style={{ color: '#9ca3af', fontSize: '13px' }}>No credit card. Priced in CAD.</span>
           </div>
-          <div style={{ display: 'flex', gap: '32px', marginTop: '40px' }}>
+          <div style={{ display: 'flex', gap: '36px', marginTop: '44px' }}>
             {[
-              { value: '13%', label: 'HST auto-calculated' },
-              { value: '$0', label: 'Setup fee' },
-              { value: '14 days', label: 'Free trial' },
+              { value: 'WSIB', label: 'Built-in tracking' },
+              { value: '13% HST', label: 'Auto-calculated' },
+              { value: 'CAD', label: 'No USD conversion' },
             ].map(stat => (
               <div key={stat.label}>
-                <p style={{ fontSize: '22px', fontWeight: '800', color: '#16a34a', margin: '0 0 2px', letterSpacing: '-0.5px' }}>{stat.value}</p>
+                <p style={{ fontSize: '20px', fontWeight: '900', color: '#16a34a', margin: '0 0 2px', letterSpacing: '-0.5px' }}>{stat.value}</p>
                 <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, fontWeight: '500' }}>{stat.label}</p>
               </div>
             ))}
@@ -56,13 +63,13 @@ export default function LandingPage() {
 
         {/* Hero visual */}
         <div style={{ position: 'relative' as const }}>
-          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.08)' }}>
-            <p style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 12px' }}>This Month</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,0.09)' }}>
+            <p style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 14px' }}>This Month — Ontario Contractor</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '14px' }}>
               {[
                 { label: 'Revenue', value: '$18,450', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-                { label: 'Quotes Sent', value: '14', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
-                { label: 'Jobs Active', value: '6', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
+                { label: 'HST Collected', value: '$2,399', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
+                { label: 'WSIB Due', value: 'Jul 31', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
                 { label: 'Unpaid', value: '2', color: '#ef4444', bg: '#fef2f2', border: '#fecaca' },
               ].map(card => (
                 <div key={card.label} style={{ background: card.bg, border: `1px solid ${card.border}`, borderRadius: '10px', padding: '14px' }}>
@@ -77,14 +84,14 @@ export default function LandingPage() {
                 <span style={{ color: '#16a34a', fontSize: '12px', fontWeight: '600' }}>View all</span>
               </div>
               {[
-                { name: 'Mike Thompson', amount: '$2,400', status: 'approved', approved: true },
-                { name: 'Sarah Chen', amount: '$890', status: 'pending', approved: false },
+                { name: 'Mike Thompson', amount: '$2,712 + HST', status: 'approved', approved: true },
+                { name: 'Sarah Chen', amount: '$1,005 + HST', status: 'sent', approved: false },
               ].map(q => (
                 <div key={q.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f3f4f6' }}>
                   <span style={{ fontSize: '13px', color: '#374151' }}>{q.name}</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <span style={{ fontWeight: '700', color: '#16a34a', fontSize: '13px' }}>{q.amount}</span>
-                    <span style={{ background: q.approved ? '#f0fdf4' : '#fefce8', color: q.approved ? '#15803d' : '#854d0e', border: `1px solid ${q.approved ? '#bbf7d0' : '#fde047'}`, borderRadius: '100px', padding: '2px 8px', fontSize: '11px', fontWeight: '600' }}>
+                    <span style={{ background: q.approved ? '#f0fdf4' : '#eff6ff', color: q.approved ? '#15803d' : '#1d4ed8', border: `1px solid ${q.approved ? '#bbf7d0' : '#bfdbfe'}`, borderRadius: '100px', padding: '2px 8px', fontSize: '11px', fontWeight: '600' }}>
                       {q.status}
                     </span>
                   </div>
@@ -92,135 +99,296 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-          <div style={{ position: 'absolute' as const, bottom: '-16px', left: '-16px', background: '#16a34a', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 8px 24px rgba(22,163,74,0.4)' }}>
-            <p style={{ color: 'white', fontSize: '12px', fontWeight: '700', margin: '0 0 2px' }}>AI Quote Generated</p>
-            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>Panel upgrade — $3,200</p>
+          {/* Float badge */}
+          <div style={{ position: 'absolute' as const, bottom: '-16px', left: '-20px', background: '#16a34a', borderRadius: '12px', padding: '12px 18px', boxShadow: '0 8px 28px rgba(22,163,74,0.45)' }}>
+            <p style={{ color: 'white', fontSize: '12px', fontWeight: '800', margin: '0 0 1px' }}>AI Quote Generated</p>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '11px', margin: 0 }}>200A panel upgrade — $3,200 + HST</p>
+          </div>
+          {/* WSIB badge */}
+          <div style={{ position: 'absolute' as const, top: '-14px', right: '-14px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+            <p style={{ color: '#15803d', fontSize: '11px', fontWeight: '800', margin: '0 0 1px' }}>WSIB Reminder</p>
+            <p style={{ color: '#6b7280', fontSize: '11px', margin: 0 }}>Filing due in 3 days</p>
           </div>
         </div>
       </section>
 
-      {/* Social Proof Bar */}
-      <div style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '20px 48px' }}>
+      {/* Trust bar */}
+      <div style={{ background: '#0a0a0a', padding: '18px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' as const }}>
-          {['Ontario Compliance Built-In', 'WSIB Auto-Tracking', 'Stripe Payments', '13% HST Calculated', 'Canadian Data Storage'].map(item => (
+          {[
+            'WSIB Premium Calculator',
+            'HST 13% Auto-Applied',
+            'Clearance Certificate Tracking',
+            'Skilled Trades Ontario Hours',
+            'Canadian Data Storage',
+            'Priced in CAD',
+          ].map(item => (
             <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a', flexShrink: 0 }} />
-              <span style={{ fontSize: '13px', color: '#374151', fontWeight: '600', whiteSpace: 'nowrap' as const }}>{item}</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', whiteSpace: 'nowrap' as const }}>{item}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Features */}
-      <section id="features" style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px' }}>
-        <div style={{ textAlign: 'center' as const, marginBottom: '64px' }}>
-          <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Everything you need</p>
-          <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>Built for the job site, not a boardroom</h2>
+      {/* Why Ontario section */}
+      <section id="why-ontario" style={{ background: '#f8fafc', borderBottom: '1px solid #e5e7eb', padding: '96px 48px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center' as const, marginBottom: '64px' }}>
+            <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>The Ontario difference</p>
+            <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 16px' }}>Other software ignores Ontario law.</h2>
+            <p style={{ color: '#6b7280', fontSize: '17px', maxWidth: '560px', margin: '0 auto', lineHeight: '1.7' }}>
+              Jobber was built for generic home services in the US. TradeDesk was built around the actual rules Ontario trades work under every day.
+            </p>
+          </div>
+
+          {/* Comparison table */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+            {/* Header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', background: '#f8fafc', borderBottom: '1px solid #e5e7eb' }}>
+              <div style={{ padding: '16px 24px' }} />
+              <div style={{ padding: '16px 24px', textAlign: 'center' as const, borderLeft: '1px solid #e5e7eb' }}>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Spreadsheets</p>
+              </div>
+              <div style={{ padding: '16px 24px', textAlign: 'center' as const, borderLeft: '1px solid #e5e7eb' }}>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Jobber (USD)</p>
+              </div>
+              <div style={{ padding: '16px 24px', textAlign: 'center' as const, borderLeft: '1px solid #e5e7eb', background: '#f0fdf4' }}>
+                <p style={{ fontSize: '12px', fontWeight: '800', color: '#15803d', margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>TradeDesk</p>
+              </div>
+            </div>
+            {[
+              { feature: 'WSIB premium tracking + reminders', sheets: false, jobber: false, td: true },
+              { feature: 'HST 13% auto-calculated on every quote', sheets: false, jobber: false, td: true },
+              { feature: 'WSIB Clearance Certificate alerts', sheets: false, jobber: false, td: true },
+              { feature: 'Apprenticeship hours (Skilled Trades Ontario)', sheets: false, jobber: false, td: true },
+              { feature: 'Priced in Canadian dollars', sheets: true, jobber: false, td: true },
+              { feature: 'Quotes + invoices', sheets: false, jobber: true, td: true },
+              { feature: 'AI quote generation', sheets: false, jobber: true, td: true },
+              { feature: 'Stripe payment links', sheets: false, jobber: true, td: true },
+              { feature: 'AI receipt scanning with line items', sheets: false, jobber: false, td: true },
+            ].map((row, i) => (
+              <div key={row.feature} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', borderTop: i === 0 ? 'none' : '1px solid #f3f4f6' }}>
+                <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>{row.feature}</span>
+                </div>
+                {[row.sheets, row.jobber, row.td].map((val, j) => (
+                  <div key={j} style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid #f3f4f6', background: j === 2 ? '#f0fdf4' : 'transparent' }}>
+                    {val ? (
+                      <div style={{ width: '22px', height: '22px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                    ) : (
+                      <div style={{ width: '22px', height: '22px', background: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1l6 6M7 1L1 7" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <p style={{ textAlign: 'center' as const, color: '#9ca3af', fontSize: '13px', marginTop: '20px' }}>
+            Jobber forces Canadian contractors to pay in USD — that's a 35–40% surcharge before you've done anything.
+          </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', background: '#e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
+      </section>
+
+      {/* Ontario compliance callouts */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px 80px' }}>
+        <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
+          <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Ontario compliance</p>
+          <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>Built around the rules you actually work under</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {[
-            { title: 'AI Quote Generator', desc: 'Describe the job in plain English. TradeDesk generates a professional, itemized quote with accurate Ontario pricing in seconds.', tag: 'Powered by GPT-4' },
-            { title: 'WSIB Tracking', desc: 'Log reportable earnings, auto-calculate premiums, and get reminded 3 days before every filing deadline. Never pay a penalty again.', tag: 'Ontario-specific' },
-            { title: 'Stripe Payment Links', desc: 'Every invoice gets a payment link. Customers pay by card or bank transfer the day they receive it. Funds deposited directly to you.', tag: 'Get paid faster' },
-            { title: 'Client CRM', desc: "Every customer's full history — quotes, invoices, jobs, and contact info — in one place. No more digging through texts.", tag: 'Full history' },
-            { title: 'Appointment Scheduling', desc: 'Book jobs with customers, send automatic SMS reminders the day before, and manage your calendar from your phone.', tag: 'SMS reminders' },
-            { title: 'Receipt Scanning', desc: 'Photograph any receipt on site. AI reads the merchant, amount, and date automatically. Export everything to CSV at tax time.', tag: 'AI-powered' },
+            {
+              title: 'WSIB Premium Tracking',
+              body: 'Log your reportable earnings each period, auto-calculate what you owe at your WSIB rate, and get a reminder 3 days before the filing deadline. No more guessing or missed deadlines.',
+              tag: 'Mandatory in Ontario',
+              color: '#dc2626', tagBg: '#fef2f2', tagBorder: '#fecaca',
+            },
+            {
+              title: 'HST Auto-Calculated',
+              body: 'Every quote and invoice automatically applies the 13% Ontario HST. Your customers see the breakdown — subtotal, tax, total — without you having to think about it.',
+              tag: '13% Ontario rate',
+              color: '#2563eb', tagBg: '#eff6ff', tagBorder: '#bfdbfe',
+            },
+            {
+              title: 'Clearance Certificate Alerts',
+              body: 'Track your WSIB Clearance Certificate and your subcontractors\' certificates. Get alerted before they expire — because hiring a sub with a lapsed cert makes you liable.',
+              tag: 'Required by law',
+              color: '#7c3aed', tagBg: '#f5f3ff', tagBorder: '#ddd6fe',
+            },
+            {
+              title: 'Apprenticeship Hour Logging',
+              body: 'Track hours toward your Red Seal or Certificate of Qualification under Skilled Trades Ontario. Log by employer, supervisor, and task. Export a clean record at any point.',
+              tag: 'Skilled Trades Ontario',
+              color: '#0369a1', tagBg: '#f0f9ff', tagBorder: '#bae6fd',
+            },
+            {
+              title: 'Crew WSIB Management',
+              body: 'Manage your subcontractors and crew members. Track each person\'s WSIB number, expiry date, and rate — with warning banners when anyone is about to lapse.',
+              tag: 'Subcontractor compliance',
+              color: '#15803d', tagBg: '#f0fdf4', tagBorder: '#bbf7d0',
+            },
+            {
+              title: 'Canadian Data Storage',
+              body: 'Your business data stays in Canada. You\'re not subject to US data laws, US court orders, or US privacy regulations. Your clients\' information doesn\'t leave the country.',
+              tag: 'Data sovereignty',
+              color: '#92400e', tagBg: '#fefce8', tagBorder: '#fde047',
+            },
           ].map(f => (
-            <div key={f.title} style={{ background: 'white', padding: '32px' }}>
-              <div style={{ display: 'inline-block', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '16px', textTransform: 'uppercase' as const, letterSpacing: '0.3px' }}>
+            <div key={f.title} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'inline-block', background: f.tagBg, border: `1px solid ${f.tagBorder}`, borderRadius: '100px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: f.color, marginBottom: '16px', textTransform: 'uppercase' as const, letterSpacing: '0.3px' }}>
                 {f.tag}
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0a0a0a', margin: '0 0 10px', letterSpacing: '-0.3px' }}>{f.title}</h3>
-              <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: '1.7', margin: 0 }}>{f.desc}</p>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0a0a0a', margin: '0 0 10px', letterSpacing: '-0.3px' }}>{f.title}</h3>
+              <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: '1.75', margin: 0 }}>{f.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
+      {/* Features */}
+      <section id="features" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
-            <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Trusted by Ontario contractors</p>
-            <h2 style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a', margin: 0 }}>What they say</h2>
+          <div style={{ textAlign: 'center' as const, marginBottom: '64px' }}>
+            <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Everything else</p>
+            <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>A complete business, not just an app</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', background: '#e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
             {[
-              { quote: 'The AI quote generator alone saves me 2 hours a week. I describe the job on site and it builds the whole thing with line items and HST.', name: 'Mike Karalus', role: 'Electrician, London ON' },
-              { quote: 'I used to dread WSIB filing. Now I just check TradeDesk once a month. It has everything ready — the numbers, the due date, everything.', name: 'Jason Patel', role: 'Plumber, Hamilton ON' },
-              { quote: 'Customers pay the same day I send the invoice now. Before TradeDesk I was chasing cheques for 60 days. It is a completely different business.', name: 'Rick Fortier', role: 'HVAC Tech, Ottawa ON' },
-            ].map(t => (
-              <div key={t.name} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '28px' }}>
-                <p style={{ fontSize: '15px', color: '#374151', lineHeight: '1.7', margin: '0 0 20px', fontStyle: 'italic' as const }}>"{t.quote}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '14px' }}>
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: '700', color: '#111', fontSize: '14px', margin: 0 }}>{t.name}</p>
-                    <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>{t.role}</p>
-                  </div>
+              { title: 'AI Quote Generator', desc: 'Describe the job in plain English — "200A panel upgrade, 3 bed house, London ON." TradeDesk writes a professional itemized quote with HST in seconds. No more quoting from memory.', tag: 'Powered by GPT-4o' },
+              { title: 'Online Payments', desc: 'Every invoice gets a Stripe payment link. Customers pay by card or bank transfer the day they receive it. Funds hit your account the next business day.', tag: 'Stripe-powered' },
+              { title: 'AI Receipt Scanning', desc: 'Photograph a Home Depot receipt on site. AI extracts every line item, amount, and category automatically. Every expense tracked, every purchase categorized for tax time.', tag: 'Line-item extraction' },
+              { title: 'Client CRM', desc: "Every customer's complete history — quotes, invoices, jobs, contact info — in one place. See at a glance what they've been quoted, what they owe, and when you last spoke.", tag: 'Full history' },
+              { title: 'Job Management', desc: 'Create jobs, attach photos from the job site, track progress from scheduled to complete, and trigger a Google review request when you mark it done.', tag: 'With photo attachments' },
+              { title: 'Appointment Scheduling', desc: 'Book customer appointments, send automatic SMS reminders the day before, and view your full calendar. Never show up to a no-show because they forgot.', tag: 'SMS reminders' },
+              { title: 'AI Profit Analyzer', desc: 'Connect your jobs, quotes, and invoices and let AI tell you your monthly revenue, average job value, collection rate, and exactly where you\'re leaving money on the table.', tag: 'Business intelligence' },
+              { title: 'Crew Management', desc: 'Add your subcontractors and crew members with their trades, rates, and WSIB info. Get warned when someone\'s certificate is about to expire before you send them to a job.', tag: 'WSIB-aware' },
+              { title: 'Public Contractor Profile', desc: 'Every TradeDesk account comes with a public profile page you can share with customers — your trade, services, reviews, and a direct quote request form.', tag: 'Free with every plan' },
+            ].map(f => (
+              <div key={f.title} style={{ background: 'white', padding: '32px' }}>
+                <div style={{ display: 'inline-block', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', color: '#15803d', marginBottom: '16px', textTransform: 'uppercase' as const, letterSpacing: '0.3px' }}>
+                  {f.tag}
                 </div>
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0a0a0a', margin: '0 0 10px', letterSpacing: '-0.3px' }}>{f.title}</h3>
+                <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: '1.75', margin: 0 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px' }}>
+      {/* Testimonials */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px' }}>
         <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
-          <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Simple pricing</p>
-          <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 12px' }}>Pay for what you use</h2>
-          <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>Start free for 14 days. No credit card required.</p>
+          <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Ontario contractors</p>
+          <h2 style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a', margin: 0 }}>From trades people who switched</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '760px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {[
-            { name: 'Starter', price: '$99', desc: 'Everything you need to run your trade business.', features: ['Unlimited quotes + invoices', 'Jobs + appointment scheduling', 'WSIB tracking', 'Stripe payment links', 'Client CRM', 'Receipt scanning', 'Email + SMS reminders'], highlight: false },
-            { name: 'Pro', price: '$199', desc: 'For contractors who want the edge.', features: ['Everything in Starter', 'AI Quote Generator', 'AI Profit Analyzer', 'AI Business Assistant', 'Apprenticeship hour tracker', 'Public contractor profile', 'Priority support'], highlight: true },
-          ].map(plan => (
-            <div key={plan.name} style={{ border: `2px solid ${plan.highlight ? '#16a34a' : '#e5e7eb'}`, borderRadius: '16px', padding: '32px', position: 'relative' as const, background: plan.highlight ? '#f0fdf4' : 'white' }}>
-              {plan.highlight && (
-                <div style={{ position: 'absolute' as const, top: '-12px', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: 'white', borderRadius: '100px', padding: '4px 16px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' as const, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
-                  Most Popular
-                </div>
-              )}
-              <p style={{ fontWeight: '800', fontSize: '18px', color: '#111', margin: '0 0 4px' }}>{plan.name}</p>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', margin: '0 0 8px' }}>
-                <span style={{ fontSize: '44px', fontWeight: '900', color: '#0a0a0a', letterSpacing: '-2px', lineHeight: '1' }}>{plan.price}</span>
-                <span style={{ color: '#6b7280', fontSize: '14px', marginBottom: '6px' }}>/month</span>
-              </div>
-              <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px' }}>{plan.desc}</p>
-              <Link href="/signup" style={{ display: 'block', textAlign: 'center' as const, padding: '13px', background: plan.highlight ? '#16a34a' : 'white', color: plan.highlight ? 'white' : '#16a34a', border: `1px solid ${plan.highlight ? '#16a34a' : '#bbf7d0'}`, borderRadius: '8px', fontWeight: '700', fontSize: '15px', textDecoration: 'none', marginBottom: '24px' }}>
-                Start Free Trial
-              </Link>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
-                {plan.features.map(f => (
-                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '16px', height: '16px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </div>
-                    <span style={{ fontSize: '14px', color: '#374151' }}>{f}</span>
-                  </div>
+            { quote: 'The AI quote generator alone saves me 2 hours a week. I describe the job on site and it builds the whole thing with line items and HST. Customers get a professional quote in two minutes.', name: 'Mike Karalus', role: 'Electrician · London, ON' },
+            { quote: 'I used to dread WSIB filing every quarter. I\'d have to dig through old invoices and spreadsheets. Now TradeDesk has everything ready — earnings, premium, due date. Takes me five minutes.', name: 'Jason Patel', role: 'Plumber · Hamilton, ON' },
+            { quote: 'Customers pay the same day I send the invoice now. Before TradeDesk I was chasing cheques for 60 days. The payment link changes everything. Night and day.', name: 'Rick Fortier', role: 'HVAC Tech · Ottawa, ON' },
+          ].map(t => (
+            <div key={t.name} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', gap: '2px', marginBottom: '16px' }}>
+                {[1,2,3,4,5].map(i => (
+                  <svg key={i} width="14" height="14" viewBox="0 0 14 14" fill="#f59e0b"><path d="M7 1l1.5 4H13l-3.5 2.5 1.3 4L7 9l-3.8 2.5L4.5 7.5 1 5h4.5z"/></svg>
                 ))}
+              </div>
+              <p style={{ fontSize: '15px', color: '#374151', lineHeight: '1.75', margin: '0 0 20px' }}>"{t.quote}"</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '38px', height: '38px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '15px', flexShrink: 0 }}>
+                  {t.name.charAt(0)}
+                </div>
+                <div>
+                  <p style={{ fontWeight: '700', color: '#111', fontSize: '14px', margin: 0 }}>{t.name}</p>
+                  <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>{t.role}</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ background: '#0a0a0a', padding: '96px 48px', textAlign: 'center' as const }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', margin: '0 0 16px', lineHeight: '1.1' }}>
-            Start running your<br />business better today.
-          </h2>
-          <p style={{ color: '#9ca3af', fontSize: '16px', margin: '0 0 36px', lineHeight: '1.6' }}>
-            14 days free. No credit card. Built for Ontario contractors.
+      {/* Pricing */}
+      <section id="pricing" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
+            <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Simple pricing in CAD</p>
+            <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 12px' }}>Less than Jobber. More for Ontario.</h2>
+            <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>14-day free trial. No credit card. Cancel any time. Price shown in Canadian dollars.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '780px', margin: '0 auto' }}>
+            {[
+              {
+                name: 'Starter', price: '$99', period: '/mo CAD',
+                desc: 'Everything you need to run your trade business compliantly.',
+                features: ['Unlimited quotes + invoices', 'HST auto-calculated', 'WSIB tracking + reminders', 'Jobs + appointment scheduling', 'Stripe payment links', 'Client CRM', 'Receipt scanning + AI extraction', 'Crew + clearance cert tracking'],
+                highlight: false,
+              },
+              {
+                name: 'Pro', price: '$199', period: '/mo CAD',
+                desc: 'AI-powered tools for contractors who want the edge.',
+                features: ['Everything in Starter', 'AI Quote Generator (GPT-4o)', 'AI Profit Analyzer', 'AI Business Assistant', 'Apprenticeship hour tracker', 'Public contractor profile', 'Referral program', 'Priority support'],
+                highlight: true,
+              },
+            ].map(plan => (
+              <div key={plan.name} style={{ border: `2px solid ${plan.highlight ? '#16a34a' : '#e5e7eb'}`, borderRadius: '16px', padding: '32px', position: 'relative' as const, background: plan.highlight ? '#f0fdf4' : 'white' }}>
+                {plan.highlight && (
+                  <div style={{ position: 'absolute' as const, top: '-13px', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: 'white', borderRadius: '100px', padding: '4px 18px', fontSize: '11px', fontWeight: '800', whiteSpace: 'nowrap' as const, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+                    Most Popular
+                  </div>
+                )}
+                <p style={{ fontWeight: '800', fontSize: '18px', color: '#111', margin: '0 0 4px' }}>{plan.name}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', margin: '0 0 8px' }}>
+                  <span style={{ fontSize: '46px', fontWeight: '900', color: '#0a0a0a', letterSpacing: '-2px', lineHeight: '1' }}>{plan.price}</span>
+                  <span style={{ color: '#6b7280', fontSize: '14px', marginBottom: '6px' }}>{plan.period}</span>
+                </div>
+                <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>{plan.desc}</p>
+                <Link href="/signup" style={{ display: 'block', textAlign: 'center' as const, padding: '13px', background: plan.highlight ? '#16a34a' : 'white', color: plan.highlight ? 'white' : '#16a34a', border: `1px solid ${plan.highlight ? '#16a34a' : '#bbf7d0'}`, borderRadius: '8px', fontWeight: '700', fontSize: '15px', textDecoration: 'none', marginBottom: '24px' }}>
+                  Start Free Trial
+                </Link>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                  {plan.features.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '16px', height: '16px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <span style={{ fontSize: '14px', color: '#374151' }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center' as const, color: '#9ca3af', fontSize: '13px', marginTop: '28px' }}>
+            Jobber's Connect plan starts at $169 USD/month (~$235 CAD). TradeDesk Starter is $99 CAD — and actually knows what WSIB is.
           </p>
-          <Link href="/signup" style={{ display: 'inline-block', padding: '16px 36px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '800', fontSize: '16px', textDecoration: 'none', boxShadow: '0 4px 20px rgba(22,163,74,0.4)' }}>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section style={{ background: '#0a0a0a', padding: '96px 48px', textAlign: 'center' as const }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: '100px', padding: '5px 14px', fontSize: '12px', fontWeight: '700', color: '#4ade80', marginBottom: '28px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+            Made in Ontario
+          </div>
+          <h2 style={{ fontSize: '48px', fontWeight: '900', color: 'white', letterSpacing: '-2px', margin: '0 0 16px', lineHeight: '1.05' }}>
+            Stop paying in USD<br />for software that<br />
+            <span style={{ color: '#4ade80' }}>ignores Ontario law.</span>
+          </h2>
+          <p style={{ color: '#6b7280', fontSize: '16px', margin: '0 0 40px', lineHeight: '1.7' }}>
+            14 days free. No credit card. Built for Ontario trades, priced in CAD, with WSIB built-in from day one.
+          </p>
+          <Link href="/signup" style={{ display: 'inline-block', padding: '16px 40px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '800', fontSize: '16px', textDecoration: 'none', boxShadow: '0 4px 24px rgba(22,163,74,0.45)', letterSpacing: '-0.2px' }}>
             Create your free account
           </Link>
+          <p style={{ color: '#4b5563', fontSize: '13px', marginTop: '16px' }}>No credit card required. Priced in CAD. Cancel any time.</p>
         </div>
       </section>
 
@@ -228,10 +396,10 @@ export default function LandingPage() {
       <footer style={{ background: '#0a0a0a', borderTop: '1px solid #1f2937', padding: '40px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
             <span style={{ fontWeight: '700', color: 'white', fontSize: '15px' }}>TradeDesk</span>
           </div>
-          <p style={{ color: '#4b5563', fontSize: '13px', margin: 0 }}>Built for Ontario contractors. Canadian data storage.</p>
+          <p style={{ color: '#4b5563', fontSize: '13px', margin: 0 }}>Built for Ontario contractors. WSIB + HST + Canadian data. Priced in CAD.</p>
           <div style={{ display: 'flex', gap: '24px' }}>
             <Link href="/login" style={{ color: '#6b7280', fontSize: '13px', textDecoration: 'none' }}>Sign in</Link>
             <Link href="/signup" style={{ color: '#6b7280', fontSize: '13px', textDecoration: 'none' }}>Sign up</Link>

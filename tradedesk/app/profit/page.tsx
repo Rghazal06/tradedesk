@@ -89,15 +89,9 @@ export default function ProfitAnalyzerPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>AI Profit Analyzer</h1>
-            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Get AI-powered insights to grow your business</p>
-          </div>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-            style={{ padding: '8px 16px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>
-            Logout
-          </button>
+        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>AI Profit Analyzer</h1>
+          <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>AI-powered insights to help you grow your business</p>
         </div>
 
         <div style={{ padding: '32px', overflowY: 'auto', flex: 1, maxWidth: '900px' }}>
@@ -105,16 +99,13 @@ export default function ProfitAnalyzerPage() {
           {/* Data Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
             {[
-              { label: 'Quotes Loaded', value: quotes.length, icon: '📋', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
-              { label: 'Invoices Loaded', value: invoices.length, icon: '🧾', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-              { label: 'Jobs Loaded', value: jobs.length, icon: '🔧', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
+              { label: 'Quotes Loaded', value: quotes.length, color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
+              { label: 'Invoices Loaded', value: invoices.length, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+              { label: 'Jobs Loaded', value: jobs.length, color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
             ].map(stat => (
-              <div key={stat.label} style={{ background: stat.bg, border: `1px solid ${stat.border}`, borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontSize: '28px' }}>{stat.icon}</span>
-                <div>
-                  <p style={{ color: stat.color, fontSize: '28px', fontWeight: '800', margin: 0 }}>{stat.value}</p>
-                  <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>{stat.label}</p>
-                </div>
+              <div key={stat.label} style={{ background: stat.bg, border: `1px solid ${stat.border}`, borderRadius: '12px', padding: '20px' }}>
+                <p style={{ color: stat.color, fontSize: '32px', fontWeight: '800', margin: '0 0 4px' }}>{stat.value}</p>
+                <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>{stat.label}</p>
               </div>
             ))}
           </div>
@@ -122,10 +113,12 @@ export default function ProfitAnalyzerPage() {
           {/* Run Analysis */}
           {!analysis && (
             <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '48px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-              <div style={{ fontSize: '56px', marginBottom: '16px' }}>🤖</div>
+              <div style={{ width: '64px', height: '64px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="#16a34a"/></svg>
+              </div>
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#111', margin: '0 0 12px' }}>Ready to Analyze Your Business</h2>
               <p style={{ color: '#6b7280', fontSize: '15px', maxWidth: '480px', margin: '0 auto 28px', lineHeight: '1.6' }}>
-                Our AI will analyze your quotes, invoices, and jobs to give you actionable insights on how to make more money.
+                AI will analyze your quotes, invoices, and jobs to surface actionable insights on growing your business.
               </p>
               {error && <p style={{ color: '#dc2626', fontSize: '14px', marginBottom: '16px' }}>{error}</p>}
               <button
@@ -144,9 +137,9 @@ export default function ProfitAnalyzerPage() {
                       <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
-                    AI is analyzing your business...
+                    Analyzing your business...
                   </>
-                ) : '✨ Run AI Analysis'}
+                ) : 'Run AI Analysis'}
               </button>
               <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             </div>
@@ -158,7 +151,7 @@ export default function ProfitAnalyzerPage() {
 
               {/* Summary */}
               <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', borderLeft: '4px solid #16a34a' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 10px' }}>📊 Business Health Summary</h2>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 10px' }}>Business Health Summary</h2>
                 <p style={{ color: '#374151', fontSize: '15px', lineHeight: '1.7', margin: 0 }}>{analysis.summary}</p>
               </div>
 
@@ -178,30 +171,27 @@ export default function ProfitAnalyzerPage() {
 
               {/* Top Recommendation */}
               <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '24px' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', margin: '0 0 10px' }}>🎯 Top Recommendation</h2>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#15803d', margin: '0 0 10px' }}>Top Recommendation</h2>
                 <p style={{ color: '#374151', fontSize: '15px', lineHeight: '1.7', margin: 0 }}>{analysis.top_recommendation}</p>
               </div>
 
               {/* Pricing Suggestion */}
               <div style={{ background: '#fefce8', border: '1px solid #fde047', borderRadius: '12px', padding: '24px' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#854d0e', margin: '0 0 10px' }}>💰 Pricing Insight</h2>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#854d0e', margin: '0 0 10px' }}>Pricing Insight</h2>
                 <p style={{ color: '#374151', fontSize: '15px', lineHeight: '1.7', margin: 0 }}>{analysis.pricing_suggestion}</p>
               </div>
 
               {/* Insights */}
               <div>
-                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 12px' }}>📈 Detailed Insights</h2>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 12px' }}>Detailed Insights</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {analysis.insights?.map((insight, i) => {
                     const style = IMPACT_STYLES[insight.impact];
                     return (
                       <div key={i} style={{ background: style.bg, border: `1px solid ${style.border}`, borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1 }}>
-                          <span style={{ fontSize: '24px' }}>{insight.icon}</span>
-                          <div>
-                            <h3 style={{ color: '#111', fontWeight: '700', fontSize: '14px', margin: '0 0 4px' }}>{insight.title}</h3>
-                            <p style={{ color: '#6b7280', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>{insight.description}</p>
-                          </div>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ color: '#111', fontWeight: '700', fontSize: '14px', margin: '0 0 4px' }}>{insight.title}</h3>
+                          <p style={{ color: '#6b7280', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>{insight.description}</p>
                         </div>
                         <span style={{ background: style.badge_bg, color: style.badge_color, border: `1px solid ${style.badge_border}`, borderRadius: '100px', padding: '3px 10px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           {insight.impact}

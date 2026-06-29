@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 // Routes that are always accessible (no auth required)
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/portal', '/contractors'];
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/portal', '/contractors', '/share', '/book'];
 
 // Routes that require Pro plan
 const PRO_ONLY_ROUTES = ['/assistant', '/profit'];
@@ -12,6 +12,7 @@ const PREMIUM_ROUTES = [
   '/dashboard', '/quotes', '/invoices', '/jobs', '/wsib',
   '/appointments', '/clients', '/assistant', '/profit',
   '/receipts', '/apprenticeship', '/settings',
+  '/pricebook', '/leads', '/crew', '/insurance',
 ];
 
 export async function middleware(req: NextRequest) {

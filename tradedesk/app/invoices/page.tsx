@@ -31,6 +31,7 @@ export default function InvoicesPage() {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
   const [paymentLinkLoadingId, setPaymentLinkLoadingId] = useState<string | null>(null);
   const [copyToast, setCopyToast] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
@@ -82,6 +83,17 @@ export default function InvoicesPage() {
     setPaymentLinkLoadingId(null);
   };
 
+  const handleDeleteInvoice = async (id: string) => {
+    if (!confirm('Delete this invoice? This cannot be undone.')) return;
+    setDeletingId(id);
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      await supabase.from('invoices').delete().eq('id', id).eq('user_id', authData.user.id);
+      setInvoices(current => current.filter(inv => inv.id !== id));
+    }
+    setDeletingId(null);
+  };
+
   const handleCopyPaymentLink = async (url: string) => {
     await navigator.clipboard.writeText(url);
     setCopyToast("Link copied!");
@@ -131,9 +143,12 @@ export default function InvoicesPage() {
               <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading invoices...</div>
             ) : invoices.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🧾</div>
-                <p style={{ margin: '0 0 16px', fontWeight: '500', color: '#374151' }}>No invoices yet</p>
-                <a href="/quotes" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Convert a quote to invoice</a>
+                <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 1h16v20l-2.5-2L14 21l-2-2-2 2-2.5-1.5L3 21z" stroke="#9ca3af" strokeWidth="1.5" strokeLinejoin="round"/><line x1="6" y1="7" x2="16" y2="7" stroke="#9ca3af" strokeWidth="1.3" strokeLinecap="round"/><line x1="6" y1="11" x2="16" y2="11" stroke="#9ca3af" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                </div>
+                <p style={{ margin: '0 0 6px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>No invoices yet</p>
+                <p style={{ margin: '0 0 20px', fontSize: '13px' }}>Convert a quote to create your first invoice</p>
+                <a href="/quotes" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Go to Quotes</a>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -151,7 +166,12 @@ export default function InvoicesPage() {
                       return (
                         <tr key={invoice.id} style={{ borderBottom: '1px solid #f9fafb' }}>
                           <td style={{ padding: '16px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{invoice.customer_name || '—'}</td>
-                          <td style={{ padding: '16px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(invoice.total)}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: '700' }}>{formatCurrency(invoice.total)}</span>
+                            {invoice.hst > 0 && (
+                              <span style={{ display: 'block', fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>incl. {formatCurrency(invoice.hst)} HST</span>
+                            )}
+                          </td>
                           <td style={{ padding: '16px 24px' }}>
                             <span style={{
                               background: isPaid ? '#f0fdf4' : '#fef2f2',
@@ -177,7 +197,7 @@ export default function InvoicesPage() {
                                       disabled={paymentLinkLoadingId === invoice.id}
                                       onClick={() => void handleSendPaymentLink(invoice)}
                                       style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>
-                                      {paymentLinkLoadingId === invoice.id ? 'Creating...' : '💳 Payment Link'}
+                                      {paymentLinkLoadingId === invoice.id ? 'Creating...' : 'Payment Link'}
                                     </button>
                                     <button
                                       disabled={markingPaidId === invoice.id}
@@ -201,14 +221,20 @@ export default function InvoicesPage() {
                                           })
                                         });
                                         const data = await res.json();
-                                        if (data.success) alert('Reminder sent!');
-                                        else alert('Error: ' + data.error);
+                                        if (data.success) { setCopyToast('Reminder sent to ' + invoice.customer_name); setTimeout(() => setCopyToast(null), 3000); }
+                                        else setErrorMessage('Reminder failed: ' + data.error);
                                       }}
                                       style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                                      📧 Remind
+                                      Remind
                                     </button>
                                   </>
                                 )}
+                                <button
+                                  disabled={deletingId === invoice.id}
+                                  onClick={() => void handleDeleteInvoice(invoice.id)}
+                                  style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === invoice.id ? 0.5 : 1 }}>
+                                  Delete
+                                </button>
                               </div>
                               {!isPaid && invoice.payment_link && (
                                 <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px' }}>

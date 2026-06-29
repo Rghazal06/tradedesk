@@ -6,8 +6,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM = process.env.RESEND_FROM_EMAIL || 'TradeDesk <onboarding@resend.dev>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://tradedesk.ca';
 
@@ -124,6 +122,7 @@ const SEQUENCE = [
 
 // POST /api/onboarding — triggered on new signup, sends day-0 email and records sequence
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     const { userId, email, fullName } = await req.json();
     if (!userId || !email) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });

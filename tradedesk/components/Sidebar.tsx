@@ -4,6 +4,7 @@ import React from 'react';
 
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import NotificationBell from './NotificationBell';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -94,6 +95,14 @@ const Icon: Record<string, () => React.JSX.Element> = {
       <path d="M13 10c.7.3 2 1.2 2 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
     </svg>
   ),
+  crew: () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="4.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="10.5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M1 12.5c0-2 1.6-3.5 3.5-3.5s3.5 1.5 3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M8 12c.4-1.8 2-3 3.5-3 .6 0 1.1.1 1.5.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  ),
   sparkle: () => (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
       <path d="M7.5 1l1.2 5.3L14 7.5l-5.3 1.2L7.5 14 6.3 8.7 1 7.5l5.3-1.2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
@@ -103,6 +112,27 @@ const Icon: Record<string, () => React.JSX.Element> = {
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
       <polyline points="1,12 5,7 8,9 13,3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       <polyline points="11,3 13,3 13,5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  pricebook: () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <rect x="2" y="2" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+      <line x1="5" y1="5.5" x2="10" y2="5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="5" y1="7.5" x2="8" y2="7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M8.5 9l.8.8L11 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  policy: () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M3 1h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M5 7l1.5 1.5L10 5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  leads: () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M13 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h3v2l3-2h5a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+      <line x1="4" y1="5.5" x2="11" y2="5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="4" y1="7.5" x2="8" y2="7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
     </svg>
   ),
   graduation: () => (
@@ -132,6 +162,7 @@ const NAV_GROUPS = [
     { label: 'Quotes', href: '/quotes', icon: 'quote' },
     { label: 'Invoices', href: '/invoices', icon: 'invoice' },
     { label: 'Jobs', href: '/jobs', icon: 'job' },
+    { label: 'Pricebook', href: '/pricebook', icon: 'pricebook' },
   ]},
   { label: 'Schedule', items: [
     { label: 'Appointments', href: '/appointments', icon: 'calendar' },
@@ -139,13 +170,16 @@ const NAV_GROUPS = [
   { label: 'Finance', items: [
     { label: 'WSIB Tracking', href: '/wsib', icon: 'shield' },
     { label: 'Receipts', href: '/receipts', icon: 'receipt' },
+    { label: 'Insurance', href: '/insurance', icon: 'policy' },
   ]},
   { label: 'People', items: [
     { label: 'Clients', href: '/clients', icon: 'clients' },
+    { label: 'Crew', href: '/crew', icon: 'crew' },
   ]},
   { label: 'AI', items: [
     { label: 'AI Assistant', href: '/assistant', icon: 'sparkle' },
     { label: 'Profit Analyzer', href: '/profit', icon: 'chart' },
+    { label: 'SMS Leads', href: '/leads', icon: 'leads' },
   ]},
   { label: 'More', items: [
     { label: 'Apprenticeship', href: '/apprenticeship', icon: 'graduation' },
@@ -196,8 +230,9 @@ export default function Sidebar({ activePath }: { activePath: string }) {
         ))}
       </nav>
 
-      {/* Sign out */}
-      <div style={{ padding: '10px', borderTop: '1px solid #1c1c1c' }}>
+      {/* Notifications + Sign out */}
+      <div style={{ padding: '8px 10px 10px', borderTop: '1px solid #1c1c1c', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <NotificationBell />
         <button
           onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
           style={{ display: 'flex', alignItems: 'center', gap: '9px', width: '100%', padding: '7px 8px', background: 'transparent', border: 'none', borderRadius: '5px', color: '#383838', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}

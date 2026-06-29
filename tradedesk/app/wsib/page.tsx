@@ -34,17 +34,45 @@ export default function WSIBPage() {
     period_start: '', period_end: '', reportable_earnings: '',
     wsib_rate: '1.69', due_date: '', notes: '',
   });
+  const [userId, setUserId] = useState('');
+  const [certExpiry, setCertExpiry] = useState('');
+  const [certNumber, setCertNumber] = useState('');
+  const [editingCert, setEditingCert] = useState(false);
+  const [certSaving, setCertSaving] = useState(false);
 
   const premiumOwing = ((parseFloat(form.reportable_earnings) || 0) * ((parseFloat(form.wsib_rate) || 0) / 100)).toFixed(2);
 
-  useEffect(() => { loadEntries(); }, []);
+  useEffect(() => { loadAll(); }, []);
 
-  async function loadEntries() {
+  async function loadAll() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
-    const { data } = await supabase.from('wsib_entries').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    setEntries(data || []);
+    setUserId(user.id);
+    const [entriesRes, profileRes] = await Promise.all([
+      supabase.from('wsib_entries').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('clearance_cert_expiry, clearance_cert_number').eq('id', user.id).single(),
+    ]);
+    setEntries(entriesRes.data || []);
+    if (profileRes.data) {
+      setCertExpiry(profileRes.data.clearance_cert_expiry || '');
+      setCertNumber(profileRes.data.clearance_cert_number || '');
+    }
     setLoading(false);
+  }
+
+  async function loadEntries() {
+    const { data } = await supabase.from('wsib_entries').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    setEntries(data || []);
+  }
+
+  async function saveCert() {
+    if (!userId) return;
+    setCertSaving(true);
+    await supabase.from('profiles').update({ clearance_cert_expiry: certExpiry || null, clearance_cert_number: certNumber || null }).eq('id', userId);
+    setEditingCert(false);
+    setCertSaving(false);
+    setMessage('Clearance certificate updated.');
+    setTimeout(() => setMessage(''), 3000);
   }
 
   async function saveEntry() {
@@ -52,19 +80,34 @@ export default function WSIBPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from('wsib_entries').insert({
-      user_id: user.id, ...form,
+      user_id: user.id,
+      period_start: form.period_start,
+      period_end: form.period_end,
       reportable_earnings: parseFloat(form.reportable_earnings),
       wsib_rate: parseFloat(form.wsib_rate),
+      due_date: form.due_date,
+      notes: form.notes,
       premium_owing: parseFloat(premiumOwing),
       status: 'pending',
     });
     if (error) { setMessage('Error: ' + error.message); }
-    else { setMessage('WSIB entry saved!'); setForm({ period_start: '', period_end: '', reportable_earnings: '', wsib_rate: '1.69', due_date: '', notes: '' }); setShowForm(false); loadEntries(); }
+    else {
+      setMessage('WSIB entry saved!');
+      setForm({ period_start: '', period_end: '', reportable_earnings: '', wsib_rate: '1.69', due_date: '', notes: '' });
+      setShowForm(false);
+      await loadEntries();
+    }
     setSaving(false);
   }
 
   async function markAsPaid(id: string) {
     await supabase.from('wsib_entries').update({ status: 'paid' }).eq('id', id);
+    loadEntries();
+  }
+
+  async function deleteEntry(id: string) {
+    if (!confirm('Delete this WSIB entry? This cannot be undone.')) return;
+    await supabase.from('wsib_entries').delete().eq('id', id);
     loadEntries();
   }
 
@@ -106,7 +149,7 @@ export default function WSIBPage() {
           {/* Overdue warning */}
           {overdue.length > 0 && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px', fontWeight: '500' }}>
-              ⚠️ You have {overdue.length} overdue WSIB payment{overdue.length > 1 ? 's' : ''}. File immediately to avoid penalties.
+              You have {overdue.length} overdue WSIB payment{overdue.length > 1 ? 's' : ''}. File immediately to avoid penalties.
             </div>
           )}
 
@@ -123,6 +166,75 @@ export default function WSIBPage() {
               </div>
             ))}
           </div>
+
+          {/* Clearance Certificate Card */}
+          {(() => {
+            const today = new Date();
+            const expiry = certExpiry ? new Date(certExpiry) : null;
+            const daysUntil = expiry ? Math.floor((expiry.getTime() - today.getTime()) / 86400000) : null;
+            const isExpired = expiry && expiry < today;
+            const isWarning = daysUntil !== null && daysUntil <= 30 && !isExpired;
+            const certColor = isExpired ? '#dc2626' : isWarning ? '#d97706' : '#16a34a';
+            const certBg = isExpired ? '#fef2f2' : isWarning ? '#fffbeb' : '#f0fdf4';
+            const certBorder = isExpired ? '#fecaca' : isWarning ? '#fde68a' : '#bbf7d0';
+            const certLabel = isExpired ? 'EXPIRED' : isWarning ? `Expires in ${daysUntil}d` : expiry ? 'Active' : 'Not Set';
+            return (
+              <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editingCert ? '20px' : '0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div>
+                      <p style={{ fontSize: '13px', fontWeight: '700', color: '#111', margin: '0 0 2px' }}>WSIB Clearance Certificate</p>
+                      <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>Required to work for general contractors in Ontario</p>
+                    </div>
+                    <span style={{ background: certBg, color: certColor, border: `1px solid ${certBorder}`, borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                      {certLabel}
+                    </span>
+                    {expiry && !isExpired && (
+                      <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                        Expires {expiry.toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        {certNumber && ` · #${certNumber}`}
+                      </span>
+                    )}
+                    {isExpired && expiry && (
+                      <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>
+                        Expired {expiry.toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' })} — renew now
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <a href="https://www.wsib.ca/en/clearance-certificates" target="_blank" rel="noreferrer"
+                      style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', padding: '6px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontWeight: '500' }}>
+                      Get Clearance
+                    </a>
+                    <button onClick={() => setEditingCert(!editingCert)}
+                      style={{ fontSize: '12px', fontWeight: '600', color: '#374151', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer' }}>
+                      {editingCert ? 'Cancel' : 'Edit'}
+                    </button>
+                  </div>
+                </div>
+                {editingCert && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Certificate Number</label>
+                      <input value={certNumber} onChange={e => setCertNumber(e.target.value)} placeholder="e.g. 1234567"
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' as const }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Expiry Date</label>
+                      <input type="date" value={certExpiry} onChange={e => setCertExpiry(e.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' as const }} />
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <button onClick={saveCert} disabled={certSaving}
+                        style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', opacity: certSaving ? 0.7 : 1 }}>
+                        {certSaving ? 'Saving...' : 'Save Certificate'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Form */}
           {showForm && (
@@ -179,8 +291,11 @@ export default function WSIBPage() {
               <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading...</div>
             ) : entries.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🛡️</div>
-                <p style={{ margin: '0 0 16px', fontWeight: '500', color: '#374151' }}>No WSIB entries yet</p>
+                <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2L19 5.5v5C19 15 15.5 19 11 21 6.5 19 3 15 3 10.5v-5z" stroke="#9ca3af" strokeWidth="1.5" strokeLinejoin="round"/><path d="M7.5 11l2 2L14 9" stroke="#9ca3af" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <p style={{ margin: '0 0 6px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>No WSIB entries yet</p>
+                <p style={{ margin: '0 0 20px', fontSize: '13px' }}>Log your premiums each reporting period</p>
                 <button onClick={() => setShowForm(true)} style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
                   Log your first period
                 </button>
@@ -219,12 +334,18 @@ export default function WSIBPage() {
                             </span>
                           </td>
                           <td style={{ padding: '14px 24px' }}>
-                            {entry.status !== 'paid' && (
-                              <button onClick={() => markAsPaid(entry.id)}
-                                style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                                ✓ Mark Paid
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {entry.status !== 'paid' && (
+                                <button onClick={() => markAsPaid(entry.id)}
+                                  style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                  Mark Paid
+                                </button>
+                              )}
+                              <button onClick={() => deleteEntry(entry.id)}
+                                style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                Delete
                               </button>
-                            )}
+                            </div>
                           </td>
                         </tr>
                       );

@@ -35,10 +35,16 @@ function PortalContent() {
   }
 
   async function approveQuote() {
-    if (!quote) return;
+    if (!quote || !token) return;
     setApproving(true);
-    await supabase.from('quotes').update({ approved: true, status: 'Approved' }).eq('id', quote.id);
-    setApproved(true);
+    const res = await fetch('/api/quotes/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (res.ok) {
+      setApproved(true);
+    }
     setApproving(false);
   }
 
@@ -73,7 +79,9 @@ function PortalContent() {
 
         {approved && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-6 text-center">
-            <div className="text-4xl mb-2">✅</div>
+            <div className="text-green-600 mb-2">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{display:'inline-block'}}><circle cx="12" cy="12" r="10" fill="#dcfce7" stroke="#86efac" strokeWidth="1.5"/><path d="M8 12l3 3 5-5" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
             <h2 className="text-green-800 font-bold text-xl">Quote Approved!</h2>
             <p className="text-green-600 mt-1">Thank you! The contractor will be in touch shortly.</p>
           </div>
@@ -133,7 +141,7 @@ function PortalContent() {
             onClick={approveQuote}
             disabled={approving}
             className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-400 text-white rounded-2xl font-bold text-lg shadow-lg disabled:opacity-50 transition-all">
-            {approving ? 'Approving...' : '✅ Approve This Quote'}
+            {approving ? 'Approving...' : 'Approve This Quote'}
           </button>
         )}
 

@@ -38,6 +38,9 @@ function SettingsContent() {
     phone: '', address: '', hst_number: '', wsib_number: '',
     payment_terms: 'Payment due within 30 days.', google_review_link: '',
     public_slug: '', is_public: false, bio: '', services: '',
+    twilio_phone: '', sms_bot_enabled: false,
+    booking_enabled: false, booking_hours_start: '08:00', booking_hours_end: '17:00',
+    booking_days: [1,2,3,4,5] as number[], booking_notice_hours: 24, booking_slot_minutes: 60,
   });
 
   useEffect(() => { loadProfile(); }, []);
@@ -61,6 +64,14 @@ function SettingsContent() {
       is_public: data.is_public || false,
       bio: data.bio || '',
       services: Array.isArray(data.services) ? data.services.join(', ') : (data.services || ''),
+      twilio_phone: data.twilio_phone || '',
+      sms_bot_enabled: data.sms_bot_enabled || false,
+      booking_enabled: data.booking_enabled || false,
+      booking_hours_start: data.booking_hours_start || '08:00',
+      booking_hours_end: data.booking_hours_end || '17:00',
+      booking_days: Array.isArray(data.booking_days) ? data.booking_days : [1,2,3,4,5],
+      booking_notice_hours: data.booking_notice_hours || 24,
+      booking_slot_minutes: data.booking_slot_minutes || 60,
     }));
   }
 
@@ -75,6 +86,14 @@ function SettingsContent() {
       id: user.id, ...profile,
       services: servicesArray,
       is_public: profile.is_public,
+      twilio_phone: profile.twilio_phone || null,
+      sms_bot_enabled: profile.sms_bot_enabled,
+      booking_enabled: profile.booking_enabled,
+      booking_hours_start: profile.booking_hours_start,
+      booking_hours_end: profile.booking_hours_end,
+      booking_days: profile.booking_days,
+      booking_notice_hours: profile.booking_notice_hours,
+      booking_slot_minutes: profile.booking_slot_minutes,
     });
     if (error) setMessage('Error saving: ' + error.message);
     else setMessage('Settings saved successfully!');
@@ -290,6 +309,153 @@ function SettingsContent() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* AI SMS Handler */}
+          <div style={sectionStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 4px' }}>AI SMS — Missed Call Handler</h2>
+                <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>When you miss a call on your Twilio number, AI texts the caller to qualify the lead automatically.</p>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <span style={{ color: '#374151', fontSize: '13px', fontWeight: '600' }}>{profile.sms_bot_enabled ? 'On' : 'Off'}</span>
+                <div
+                  onClick={() => setProfile({ ...profile, sms_bot_enabled: !profile.sms_bot_enabled })}
+                  style={{ width: '40px', height: '22px', borderRadius: '11px', cursor: 'pointer', background: profile.sms_bot_enabled ? '#16a34a' : '#d1d5db', position: 'relative', transition: 'background 0.2s' }}
+                >
+                  <div style={{ position: 'absolute', top: '3px', left: profile.sms_bot_enabled ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                </div>
+              </label>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px' }}>
+              <div>
+                <label style={labelStyle}>Twilio Phone Number</label>
+                <input
+                  value={profile.twilio_phone}
+                  onChange={e => setProfile({ ...profile, twilio_phone: e.target.value })}
+                  placeholder="+15195550000"
+                  style={inputStyle}
+                />
+                <p style={{ color: '#6b7280', fontSize: '12px', marginTop: '6px' }}>
+                  Your Twilio number in +1XXXXXXXXXX format. Point its voice webhook to <code style={{ background: '#f3f4f6', padding: '2px 5px', borderRadius: '4px', fontSize: '11px' }}>https://yoursite.com/api/twilio/voice</code> and SMS webhook to <code style={{ background: '#f3f4f6', padding: '2px 5px', borderRadius: '4px', fontSize: '11px' }}>https://yoursite.com/api/twilio/sms</code>
+                </p>
+              </div>
+            </div>
+            <div style={{ marginTop: '14px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 16px' }}>
+              <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 4px', fontWeight: '600' }}>You also need these environment variables:</p>
+              <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, fontFamily: 'monospace' }}>
+                TWILIO_ACCOUNT_SID · TWILIO_AUTH_TOKEN
+              </p>
+            </div>
+            <div style={{ marginTop: '12px' }}>
+              <a href="/leads" style={{ color: '#16a34a', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>
+                View SMS Leads inbox →
+              </a>
+            </div>
+          </div>
+
+          {/* Online Booking */}
+          <div style={sectionStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 4px' }}>Online Booking</h2>
+                <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>Let customers book appointments directly from a public link. Jobs with scheduled times block those slots automatically.</p>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flexShrink: 0, marginLeft: '16px' }}>
+                <span style={{ color: '#374151', fontSize: '13px', fontWeight: '600' }}>{profile.booking_enabled ? 'On' : 'Off'}</span>
+                <div
+                  onClick={() => setProfile({ ...profile, booking_enabled: !profile.booking_enabled })}
+                  style={{ width: '40px', height: '22px', borderRadius: '11px', cursor: 'pointer', background: profile.booking_enabled ? '#16a34a' : '#d1d5db', position: 'relative', transition: 'background 0.2s' }}
+                >
+                  <div style={{ position: 'absolute', top: '3px', left: profile.booking_enabled ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                </div>
+              </label>
+            </div>
+
+            {profile.booking_enabled && !profile.is_public && (
+              <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: '8px', padding: '10px 14px', marginBottom: '4px' }}>
+                <p style={{ fontSize: '13px', color: '#854d0e', margin: 0, fontWeight: '600' }}>
+                  Your public profile is set to Private. Customers won't be able to reach your booking page until you enable Public Profile above.
+                </p>
+              </div>
+            )}
+
+            {profile.booking_enabled && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                {/* Working hours */}
+                <div>
+                  <label style={labelStyle}>Working Hours</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input type="time" value={profile.booking_hours_start} onChange={e => setProfile({ ...profile, booking_hours_start: e.target.value })} style={{ ...inputStyle, width: '130px' }} />
+                    <span style={{ color: '#6b7280', fontSize: '13px' }}>to</span>
+                    <input type="time" value={profile.booking_hours_end} onChange={e => setProfile({ ...profile, booking_hours_end: e.target.value })} style={{ ...inputStyle, width: '130px' }} />
+                  </div>
+                </div>
+
+                {/* Working days */}
+                <div>
+                  <label style={labelStyle}>Working Days</label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {[['Sun',0],['Mon',1],['Tue',2],['Wed',3],['Thu',4],['Fri',5],['Sat',6]].map(([label, val]) => {
+                      const dayVal = val as number;
+                      const active = (profile.booking_days || []).includes(dayVal);
+                      return (
+                        <button
+                          key={dayVal}
+                          type="button"
+                          onClick={() => {
+                            const days = profile.booking_days || [];
+                            setProfile({ ...profile, booking_days: active ? days.filter(d => d !== dayVal) : [...days, dayVal].sort() });
+                          }}
+                          style={{ padding: '6px 12px', borderRadius: '8px', border: active ? '2px solid #16a34a' : '1px solid #e5e7eb', background: active ? '#f0fdf4' : 'white', color: active ? '#15803d' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                        >{label as string}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Slot duration + notice */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={labelStyle}>Slot Duration</label>
+                    <select value={profile.booking_slot_minutes} onChange={e => setProfile({ ...profile, booking_slot_minutes: parseInt(e.target.value) })} style={inputStyle}>
+                      <option value={30}>30 minutes</option>
+                      <option value={60}>1 hour</option>
+                      <option value={90}>1.5 hours</option>
+                      <option value={120}>2 hours</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Minimum Notice</label>
+                    <select value={profile.booking_notice_hours} onChange={e => setProfile({ ...profile, booking_notice_hours: parseInt(e.target.value) })} style={inputStyle}>
+                      <option value={2}>2 hours</option>
+                      <option value={4}>4 hours</option>
+                      <option value={12}>12 hours</option>
+                      <option value={24}>24 hours</option>
+                      <option value={48}>48 hours</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Booking link */}
+                {profile.public_slug && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px 16px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: '700', color: '#15803d', margin: '0 0 6px' }}>Your booking link</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <code style={{ fontSize: '12px', color: '#374151', background: 'white', border: '1px solid #d1fae5', padding: '6px 10px', borderRadius: '6px', flex: 1, overflowX: 'auto' }}>
+                        {typeof window !== 'undefined' ? window.location.origin : 'https://tradedesk.ca'}/book/{profile.public_slug}
+                      </code>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(`${window.location.origin}/book/${profile.public_slug}`)}
+                        style={{ padding: '6px 12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', flexShrink: 0 }}
+                      >Copy</button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: '8px 0 0' }}>Share this link with customers. They can self-book based on your availability.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Subscription */}

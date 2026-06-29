@@ -137,9 +137,11 @@ export default function ClientsPage() {
               <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>Loading clients...</div>
             ) : filtered.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9ca3af', padding: '60px' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>👥</div>
-                <p style={{ fontWeight: '500', color: '#374151' }}>No clients yet</p>
-                <p style={{ fontSize: '13px' }}>Clients appear automatically when you create quotes, invoices, or jobs</p>
+                <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="7" r="3.5" stroke="#9ca3af" strokeWidth="1.4"/><path d="M1 19c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#9ca3af" strokeWidth="1.4" strokeLinecap="round"/><circle cx="17" cy="8" r="2.5" stroke="#9ca3af" strokeWidth="1.3"/><path d="M21 19c0-2.8-1.8-5-4-5" stroke="#9ca3af" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                </div>
+                <p style={{ fontWeight: '600', color: '#374151', fontSize: '14px', margin: '0 0 6px' }}>No clients yet</p>
+                <p style={{ fontSize: '13px', margin: 0 }}>Clients appear automatically when you create quotes, invoices, or jobs</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -182,8 +184,8 @@ export default function ClientsPage() {
                   <div>
                     <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#111', margin: '0 0 4px' }}>{selected.name}</h2>
                     <div style={{ display: 'flex', gap: '16px' }}>
-                      {selected.email && <span style={{ color: '#6b7280', fontSize: '13px' }}>✉️ {selected.email}</span>}
-                      {selected.phone && <span style={{ color: '#6b7280', fontSize: '13px' }}>📞 {selected.phone}</span>}
+                      {selected.email && <span style={{ color: '#6b7280', fontSize: '13px' }}>{selected.email}</span>}
+                      {selected.phone && <span style={{ color: '#6b7280', fontSize: '13px' }}>{selected.phone}</span>}
                     </div>
                   </div>
                 </div>
@@ -211,7 +213,7 @@ export default function ClientsPage() {
               {clientQuotes.length > 0 && (
                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb' }}>
-                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>📋 Quotes</h3>
+                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>Quotes</h3>
                   </div>
                   {clientQuotes.map(q => (
                     <div key={q.id} style={{ padding: '12px 20px', borderBottom: '1px solid #f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -232,7 +234,7 @@ export default function ClientsPage() {
               {clientInvoices.length > 0 && (
                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb' }}>
-                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>🧾 Invoices</h3>
+                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>Invoices</h3>
                   </div>
                   {clientInvoices.map(inv => (
                     <div key={inv.id} style={{ padding: '12px 20px', borderBottom: '1px solid #f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -253,7 +255,7 @@ export default function ClientsPage() {
               {clientJobs.length > 0 && (
                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb' }}>
-                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>🔧 Jobs</h3>
+                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>Jobs</h3>
                   </div>
                   {clientJobs.map(j => (
                     <div key={j.id} style={{ padding: '12px 20px', borderBottom: '1px solid #f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

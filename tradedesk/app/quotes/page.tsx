@@ -27,6 +27,8 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -44,6 +46,17 @@ export default function QuotesPage() {
     };
     void fetchQuotes();
   }, []);
+
+  const handleDeleteQuote = async (id: string) => {
+    if (!confirm('Delete this quote? This cannot be undone.')) return;
+    setDeletingId(id);
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      await supabase.from('quotes').delete().eq('id', id).eq('user_id', authData.user.id);
+      setQuotes(current => current.filter(q => q.id !== id));
+    }
+    setDeletingId(null);
+  };
 
   const handleConvertToInvoice = async (quote: QuoteRow) => {
     setConvertingId(quote.id);
@@ -91,6 +104,12 @@ export default function QuotesPage() {
         </div>
 
         <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+          {toast && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
+              {toast}
+            </div>
+          )}
+
           {errorMessage && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px' }}>
               {errorMessage}
@@ -106,8 +125,11 @@ export default function QuotesPage() {
               <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>Loading quotes...</div>
             ) : quotes.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
-                <p style={{ margin: '0 0 16px', fontWeight: '500', color: '#374151' }}>No quotes yet</p>
+                <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', background: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="1" width="16" height="20" rx="2" stroke="#9ca3af" strokeWidth="1.5"/><line x1="6" y1="6" x2="16" y2="6" stroke="#9ca3af" strokeWidth="1.3" strokeLinecap="round"/><line x1="6" y1="10" x2="16" y2="10" stroke="#9ca3af" strokeWidth="1.3" strokeLinecap="round"/><line x1="6" y1="14" x2="11" y2="14" stroke="#9ca3af" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                </div>
+                <p style={{ margin: '0 0 6px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>No quotes yet</p>
+                <p style={{ margin: '0 0 20px', fontSize: '13px' }}>Create a quote to send to your customer</p>
                 <a href="/quotes/new" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Create your first quote</a>
               </div>
             ) : (
@@ -152,20 +174,24 @@ export default function QuotesPage() {
                             <button
                               onClick={async () => {
                                 const anyQuote = quote as any;
-                                if (!anyQuote.portal_token) {
-                                  const token = crypto.randomUUID();
+                                let token = anyQuote.portal_token;
+                                if (!token) {
+                                  token = crypto.randomUUID();
                                   await supabase.from('quotes').update({ portal_token: token }).eq('id', quote.id);
-                                  const link = `${window.location.origin}/portal?token=${token}`;
-                                  navigator.clipboard.writeText(link);
-                                  alert('Portal link copied! Send this to your customer: ' + link);
-                                } else {
-                                  const link = `${window.location.origin}/portal?token=${anyQuote.portal_token}`;
-                                  navigator.clipboard.writeText(link);
-                                  alert('Portal link copied! Send this to your customer: ' + link);
                                 }
+                                const link = `${window.location.origin}/portal?token=${token}`;
+                                await navigator.clipboard.writeText(link);
+                                setToast('Portal link copied — send it to your customer.');
+                                setTimeout(() => setToast(''), 3000);
                               }}
                               style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                              🔗 Portal
+                              Portal Link
+                            </button>
+                            <button
+                              disabled={deletingId === quote.id}
+                              onClick={() => void handleDeleteQuote(quote.id)}
+                              style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === quote.id ? 0.5 : 1 }}>
+                              Delete
                             </button>
                           </div>
                         </td>

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import Sidebar from '../../components/Sidebar';
-import NotificationBell from '../../components/NotificationBell';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,19 +16,18 @@ export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
-  const [userId, setUserId] = useState('');
   const [metrics, setMetrics] = useState({ revenue: 0, unpaid: 0, activeJobs: 0, quotesMonth: 0 });
   const [unpaidInvoices, setUnpaidInvoices] = useState<any[]>([]);
   const [todayAppts, setTodayAppts] = useState<any[]>([]);
   const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
   const [wsibDue, setWsibDue] = useState<any[]>([]);
+  const [certExpiry, setCertExpiry] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
-    setUserId(user.id);
 
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
     if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
@@ -39,7 +37,7 @@ export default function DashboardPage() {
     const todayStr = now.toISOString().split('T')[0];
     const in7Days = new Date(now.getTime() + 7 * 86400000).toISOString().split('T')[0];
 
-    const [paidInvoices, unpaidInvs, activeJobsRes, quotesRes, recentQ, appts, wsib] = await Promise.all([
+    const [paidInvoices, unpaidInvs, activeJobsRes, quotesRes, recentQ, appts, wsib, profileRes] = await Promise.all([
       supabase.from('invoices').select('total').eq('user_id', user.id).eq('status', 'paid').gte('created_at', firstOfMonth),
       supabase.from('invoices').select('id, customer_name, total, created_at, payment_link').eq('user_id', user.id).eq('status', 'unpaid').order('created_at', { ascending: true }).limit(5),
       supabase.from('jobs').select('id').eq('user_id', user.id).in('status', ['scheduled', 'in progress']),
@@ -47,6 +45,7 @@ export default function DashboardPage() {
       supabase.from('quotes').select('id, customer_name, total, status, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),
       supabase.from('appointments').select('id, customer_name, scheduled_time, job_type, status').eq('user_id', user.id).eq('scheduled_date', todayStr).order('scheduled_time', { ascending: true }),
       supabase.from('wsib_entries').select('id, premium_owing, due_date').eq('user_id', user.id).eq('status', 'pending').lte('due_date', in7Days).order('due_date', { ascending: true }),
+      supabase.from('profiles').select('clearance_cert_expiry').eq('id', user.id).single(),
     ]);
 
     const revenue = paidInvoices.data?.reduce((s, i) => s + (i.total || 0), 0) || 0;
@@ -55,6 +54,7 @@ export default function DashboardPage() {
     setTodayAppts(appts.data || []);
     setRecentQuotes(recentQ.data || []);
     setWsibDue(wsib.data || []);
+    setCertExpiry(profileRes.data?.clearance_cert_expiry || null);
     setLoading(false);
   }
 
@@ -71,17 +71,27 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: FF }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .dash-metrics { grid-template-columns: repeat(2, 1fr) !important; }
+          .dash-two-col { grid-template-columns: 1fr !important; }
+          .dash-pad { padding: 16px !important; }
+          .dash-header { padding: 0 16px !important; }
+        }
+        @media (max-width: 480px) {
+          .dash-metrics { grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
       <Sidebar activePath="/dashboard" />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Page header */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0 32px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div className="dash-header" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '0 32px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <span style={{ fontSize: '13px', color: '#6b7280' }}>{dateStr}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {userId && <NotificationBell userId={userId} />}
             <a href="/quotes/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: '#16a34a', color: 'white', borderRadius: '6px', fontWeight: '600', fontSize: '13px', textDecoration: 'none', letterSpacing: '-0.1px' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="6" y1="1" x2="6" y2="11" stroke="white" strokeWidth="1.8" strokeLinecap="round"/><line x1="1" y1="6" x2="11" y2="6" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
               New Quote
@@ -89,7 +99,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+        <div className="dash-pad" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
 
           {loading ? (
             <div style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</div>
@@ -106,8 +116,23 @@ export default function DashboardPage() {
               </div>
 
               {/* Alerts — only shown when there's something to act on */}
-              {(unpaidInvoices.length > 0 || wsibDue.length > 0) && (
+              {(() => {
+                const certDate = certExpiry ? new Date(certExpiry) : null;
+                const certDays = certDate ? Math.floor((certDate.getTime() - Date.now()) / 86400000) : null;
+                const showCertAlert = certDays !== null && certDays <= 30;
+                return (unpaidInvoices.length > 0 || wsibDue.length > 0 || showCertAlert) ? (
                 <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {showCertAlert && certDate && (
+                    <a href="/wsib" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: certDays < 0 ? '#fef2f2' : '#fffbeb', border: `1px solid ${certDays < 0 ? '#fecaca' : '#fde68a'}`, borderRadius: '8px', padding: '12px 16px', textDecoration: 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: certDays < 0 ? '#dc2626' : '#d97706', flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: certDays < 0 ? '#7f1d1d' : '#78350f' }}>
+                          {certDays < 0 ? `WSIB Clearance Certificate expired ${Math.abs(certDays)} days ago — renew immediately` : `WSIB Clearance Certificate expires in ${certDays} days (${certDate.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })})`}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '12px', color: certDays < 0 ? '#dc2626' : '#d97706', fontWeight: '600' }}>Renew →</span>
+                    </a>
+                  )}
                   {wsibDue.map(w => (
                     <a key={w.id} href="/wsib" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', textDecoration: 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -131,10 +156,11 @@ export default function DashboardPage() {
                     );
                   })}
                 </div>
-              )}
+                ) : null;
+              })()}
 
               {/* Metrics row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e5e7eb', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden', marginBottom: '24px' }}>
+              <div className="dash-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e5e7eb', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden', marginBottom: '24px' }}>
                 {[
                   { label: 'Revenue this month', value: `$${metrics.revenue.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, sub: 'collected', color: '#16a34a' },
                   { label: 'Unpaid invoices', value: metrics.unpaid.toString(), sub: 'outstanding', color: metrics.unpaid > 0 ? '#dc2626' : '#0a0a0a' },
@@ -150,7 +176,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Two-column: Recent quotes + Today */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
+              <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
 
                 {/* Recent quotes */}
                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>

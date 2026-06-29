@@ -1,17 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { rateLimit } from '../../../lib/rateLimit';
+import { getAuthUser } from '../../../lib/apiAuth';
+import { sanitizeString } from '../../../lib/validate';
 
 export async function POST(req: NextRequest) {
+  // Auth required
+  const user = await getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 15 AI quote generations per minute per user
+  if (!rateLimit(user.id, 15, 60000)) {
+    return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 });
+  }
+
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
   try {
-    const { jobDescription, tradeType } = await req.json();
+    const body = await req.json();
+    const jobDescription = sanitizeString(body.jobDescription || '', 2000);
+    const tradeType = sanitizeString(body.tradeType || '', 100);
+
+    if (!jobDescription) {
+      return NextResponse.json({ error: 'Job description is required.' }, { status: 400 });
+    }
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `You are an expert estimator for Ontario, Canada trades businesses. 
+          content: `You are an expert estimator for Ontario, Canada trades businesses.
           Generate realistic, professional quote line items for the job described.
           Always respond with valid JSON only, no markdown, no explanation.
           Use Canadian dollar amounts appropriate for Ontario market rates in 2025.
@@ -23,7 +44,7 @@ export async function POST(req: NextRequest) {
           content: `Generate quote line items for this job:
           Trade Type: ${tradeType || 'General Contractor'}
           Job Description: ${jobDescription}
-          
+
           Respond with this exact JSON format:
           {
             "line_items": [
@@ -42,11 +63,14 @@ export async function POST(req: NextRequest) {
     });
 
     const content = completion.choices[0].message.content || '';
-    const parsed = JSON.parse(content);
-    
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return NextResponse.json({ error: 'AI could not generate a quote. Please try again.' }, { status: 422 });
+    }
+    const parsed = JSON.parse(jsonMatch[0]);
     return NextResponse.json(parsed);
-  } catch (error: any) {
-    console.error('AI Quote error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error('ai-quote error:', error);
+    return NextResponse.json({ error: 'Quote generation failed. Please try again.' }, { status: 500 });
   }
 }

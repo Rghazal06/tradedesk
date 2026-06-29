@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getAuthUser } from '../../../lib/apiAuth';
+import { sanitizeString } from '../../../lib/validate';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,11 +10,18 @@ const supabase = createClient(
 
 // POST /api/referral — apply a referral code at signup
 export async function POST(req: NextRequest) {
-  try {
-    const { userId, referralCode } = await req.json();
+  const user = await getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    if (!userId || !referralCode) {
-      return NextResponse.json({ error: 'userId and referralCode required' }, { status: 400 });
+  try {
+    const body = await req.json();
+    const referralCode = sanitizeString(body.referralCode || '', 20);
+    // userId from body is ignored — use server-verified user.id
+
+    if (!referralCode) {
+      return NextResponse.json({ error: 'referralCode required' }, { status: 400 });
     }
 
     const code = referralCode.toUpperCase().trim();
@@ -28,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid referral code' }, { status: 404 });
     }
 
-    if (referrer.id === userId) {
+    if (referrer.id === user.id) {
       return NextResponse.json({ error: 'Cannot use your own referral code' }, { status: 400 });
     }
 
@@ -36,7 +45,7 @@ export async function POST(req: NextRequest) {
     const { data: currentUser } = await supabase
       .from('profiles')
       .select('referred_by')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single();
 
     if (currentUser?.referred_by) {
@@ -47,7 +56,7 @@ export async function POST(req: NextRequest) {
     await supabase
       .from('profiles')
       .update({ referred_by: referrer.id })
-      .eq('id', userId);
+      .eq('id', user.id);
 
     // Increment referrer's count
     await supabase
@@ -65,25 +74,30 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error('referral POST error:', error);
+    return NextResponse.json({ error: 'Failed to apply referral code.' }, { status: 500 });
   }
 }
 
-// GET /api/referral?userId=... — get referral stats for a user
+// GET /api/referral — get referral stats for the authenticated user
 export async function GET(req: NextRequest) {
-  try {
-    const userId = req.nextUrl.searchParams.get('userId');
-    if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
+  const user = await getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
+  try {
+    // userId query param is ignored — only return data for the authenticated user
     const { data } = await supabase
       .from('profiles')
       .select('referral_code, referral_count')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single();
 
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error('referral GET error:', error);
+    return NextResponse.json({ error: 'Failed to fetch referral stats.' }, { status: 500 });
   }
 }
