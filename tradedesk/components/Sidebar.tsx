@@ -187,6 +187,15 @@ const NAV_GROUPS = [
   ]},
 ];
 
+const BOTTOM_NAV_ITEMS = [
+  { label: 'Home', href: '/dashboard', icon: 'dashboard' },
+  { label: 'Quotes', href: '/quotes', icon: 'quote' },
+  { label: 'Jobs', href: '/jobs', icon: 'job' },
+  { label: 'Calendar', href: '/appointments', icon: 'calendar' },
+  { label: 'Clients', href: '/clients', icon: 'clients' },
+  { label: 'Settings', href: '/settings', icon: 'settings' },
+];
+
 export default function Sidebar({ activePath }: { activePath: string }) {
   const router = useRouter();
 
@@ -196,7 +205,9 @@ export default function Sidebar({ activePath }: { activePath: string }) {
   }
 
   return (
-    <div style={{ width: '220px', minWidth: '220px', background: '#0f0f0f', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, borderRight: '1px solid #1c1c1c' }}>
+    <>
+    {/* Desktop sidebar */}
+    <div className="td-sidebar" style={{ width: '220px', minWidth: '220px', background: '#0f0f0f', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, borderRight: '1px solid #1c1c1c' }}>
       {/* Logo */}
       <div style={{ padding: '20px 18px 18px', borderBottom: '1px solid #1c1c1c' }}>
         <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '11px', textDecoration: 'none' }}>
@@ -242,5 +253,28 @@ export default function Sidebar({ activePath }: { activePath: string }) {
         </button>
       </div>
     </div>
+
+    {/* Mobile bottom nav */}
+    <div className="td-bottom-nav" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#0f0f0f', borderTop: '1px solid #1c1c1c', flexDirection: 'row', alignItems: 'stretch', height: '62px' }}>
+      {BOTTOM_NAV_ITEMS.map(item => {
+        const isActive = active(item.href);
+        const IconComp = Icon[item.icon];
+        return (
+          <a
+            key={item.href}
+            href={item.href}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', textDecoration: 'none', color: isActive ? '#16a34a' : '#525252', background: 'transparent', borderTop: `2px solid ${isActive ? '#16a34a' : 'transparent'}`, padding: '8px 0' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#16a34a' : '#525252' }}>
+              {IconComp && <IconComp />}
+            </span>
+            <span style={{ fontSize: '10px', fontWeight: isActive ? '700' : '500', letterSpacing: '0.1px' }}>
+              {item.label}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+    </>
   );
 }

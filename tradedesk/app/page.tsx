@@ -5,14 +5,32 @@ const FF = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 export default function LandingPage() {
   return (
     <div style={{ fontFamily: FF, background: '#ffffff', color: '#111' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .td-lp-nav { padding: 0 16px !important; }
+          .td-nav-links { display: none !important; }
+          .td-hero { grid-template-columns: 1fr !important; padding: 48px 20px 40px !important; gap: 0 !important; }
+          .td-h1 { font-size: 34px !important; letter-spacing: -1.5px !important; }
+          .td-hero-visual { display: none !important; }
+          .td-trust-bar { padding: 14px 20px !important; }
+          .td-section { padding: 56px 20px !important; }
+          .td-comparison-table { overflow-x: auto !important; border-radius: 12px !important; }
+          .td-comparison-table > * { min-width: 560px; }
+          .td-3col { grid-template-columns: 1fr !important; }
+          .td-2col { grid-template-columns: 1fr !important; max-width: 100% !important; }
+          .td-h2 { font-size: 26px !important; letter-spacing: -0.5px !important; }
+          .td-cta-h2 { font-size: 30px !important; letter-spacing: -1px !important; line-height: 1.15 !important; }
+          .td-footer-inner { padding: 24px 20px !important; flex-direction: column !important; text-align: center !important; }
+        }
+      `}</style>
 
       {/* Navbar */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav className="td-lp-nav" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
           <span style={{ fontWeight: '800', fontSize: '17px', letterSpacing: '-0.3px' }}>TradeDesk</span>
         </div>
-        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+        <div className="td-nav-links" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
           <a href="#why-ontario" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Why Ontario</a>
           <a href="#features" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Features</a>
           <a href="#pricing" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Pricing</a>
@@ -24,13 +42,13 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '88px 48px 72px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '72px', alignItems: 'center' }}>
+      <section className="td-hero" style={{ maxWidth: '1200px', margin: '0 auto', padding: '88px 48px 72px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '72px', alignItems: 'center' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '5px 14px', fontSize: '12px', fontWeight: '700', color: '#15803d', marginBottom: '28px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="5" fill="#16a34a"/></svg>
             Made in Ontario, for Ontario
           </div>
-          <h1 style={{ fontSize: '54px', fontWeight: '900', lineHeight: '1.05', letterSpacing: '-2.5px', color: '#0a0a0a', margin: '0 0 22px' }}>
+          <h1 className="td-h1" style={{ fontSize: '54px', fontWeight: '900', lineHeight: '1.05', letterSpacing: '-2.5px', color: '#0a0a0a', margin: '0 0 22px' }}>
             The only platform<br />
             built for<br />
             <span style={{ color: '#16a34a' }}>Ontario trades law.</span>
@@ -62,7 +80,7 @@ export default function LandingPage() {
         </div>
 
         {/* Hero visual */}
-        <div style={{ position: 'relative' as const }}>
+        <div className="td-hero-visual" style={{ position: 'relative' as const }}>
           <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,0.09)' }}>
             <p style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 14px' }}>This Month — Ontario Contractor</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '14px' }}>
@@ -113,7 +131,7 @@ export default function LandingPage() {
       </section>
 
       {/* Trust bar */}
-      <div style={{ background: '#0a0a0a', padding: '18px 48px' }}>
+      <div className="td-trust-bar" style={{ background: '#0a0a0a', padding: '18px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' as const }}>
           {[
             'WSIB Premium Calculator',
@@ -132,18 +150,18 @@ export default function LandingPage() {
       </div>
 
       {/* Why Ontario section */}
-      <section id="why-ontario" style={{ background: '#f8fafc', borderBottom: '1px solid #e5e7eb', padding: '96px 48px' }}>
+      <section id="why-ontario" className="td-section" style={{ background: '#f8fafc', borderBottom: '1px solid #e5e7eb', padding: '96px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center' as const, marginBottom: '64px' }}>
             <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>The Ontario difference</p>
-            <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 16px' }}>Other software ignores Ontario law.</h2>
+            <h2 className="td-h2" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 16px' }}>Other software ignores Ontario law.</h2>
             <p style={{ color: '#6b7280', fontSize: '17px', maxWidth: '560px', margin: '0 auto', lineHeight: '1.7' }}>
               Jobber was built for generic home services in the US. TradeDesk was built around the actual rules Ontario trades work under every day.
             </p>
           </div>
 
           {/* Comparison table */}
-          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+          <div className="td-comparison-table" style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
             {/* Header */}
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', background: '#f8fafc', borderBottom: '1px solid #e5e7eb' }}>
               <div style={{ padding: '16px 24px' }} />
@@ -196,12 +214,12 @@ export default function LandingPage() {
       </section>
 
       {/* Ontario compliance callouts */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px 80px' }}>
+      <section className="td-section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px 80px' }}>
         <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
           <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Ontario compliance</p>
-          <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>Built around the rules you actually work under</h2>
+          <h2 className="td-h2" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>Built around the rules you actually work under</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div className="td-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {[
             {
               title: 'WSIB Premium Tracking',
@@ -252,13 +270,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
+      <section id="features" className="td-section" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center' as const, marginBottom: '64px' }}>
             <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Everything else</p>
-            <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>A complete business, not just an app</h2>
+            <h2 className="td-h2" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: 0 }}>A complete business, not just an app</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', background: '#e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
+          <div className="td-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', background: '#e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
             {[
               { title: 'AI Quote Generator', desc: 'Describe the job in plain English — "200A panel upgrade, 3 bed house, London ON." TradeDesk writes a professional itemized quote with HST in seconds. No more quoting from memory.', tag: 'Powered by GPT-4o' },
               { title: 'Online Payments', desc: 'Every invoice gets a Stripe payment link. Customers pay by card or bank transfer the day they receive it. Funds hit your account the next business day.', tag: 'Stripe-powered' },
@@ -283,12 +301,12 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px' }}>
+      <section className="td-section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px' }}>
         <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
           <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Ontario contractors</p>
-          <h2 style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a', margin: 0 }}>From trades people who switched</h2>
+          <h2 className="td-h2" style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a', margin: 0 }}>From trades people who switched</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div className="td-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {[
             { quote: 'The AI quote generator alone saves me 2 hours a week. I describe the job on site and it builds the whole thing with line items and HST. Customers get a professional quote in two minutes.', name: 'Mike Karalus', role: 'Electrician · London, ON' },
             { quote: 'I used to dread WSIB filing every quarter. I\'d have to dig through old invoices and spreadsheets. Now TradeDesk has everything ready — earnings, premium, due date. Takes me five minutes.', name: 'Jason Patel', role: 'Plumber · Hamilton, ON' },
@@ -316,14 +334,14 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
+      <section id="pricing" className="td-section" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', padding: '96px 48px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
             <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Simple pricing in CAD</p>
-            <h2 style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 12px' }}>Less than Jobber. More for Ontario.</h2>
+            <h2 className="td-h2" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 12px' }}>Less than Jobber. More for Ontario.</h2>
             <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>14-day free trial. No credit card. Cancel any time. Price shown in Canadian dollars.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '780px', margin: '0 auto' }}>
+          <div className="td-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '780px', margin: '0 auto' }}>
             {[
               {
                 name: 'Starter', price: '$99', period: '/mo CAD',
@@ -378,7 +396,7 @@ export default function LandingPage() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: '100px', padding: '5px 14px', fontSize: '12px', fontWeight: '700', color: '#4ade80', marginBottom: '28px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
             Made in Ontario
           </div>
-          <h2 style={{ fontSize: '48px', fontWeight: '900', color: 'white', letterSpacing: '-2px', margin: '0 0 16px', lineHeight: '1.05' }}>
+          <h2 className="td-cta-h2" style={{ fontSize: '48px', fontWeight: '900', color: 'white', letterSpacing: '-2px', margin: '0 0 16px', lineHeight: '1.05' }}>
             Stop paying in USD<br />for software that<br />
             <span style={{ color: '#4ade80' }}>ignores Ontario law.</span>
           </h2>
@@ -394,7 +412,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer style={{ background: '#0a0a0a', borderTop: '1px solid #1f2937', padding: '40px 48px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '16px' }}>
+        <div className="td-footer-inner" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
             <span style={{ fontWeight: '700', color: 'white', fontSize: '15px' }}>TradeDesk</span>

@@ -46,6 +46,10 @@
     border-radius: 3px;
   }
 
+  /* Sidebar responsive helpers */
+  .td-sidebar { display: flex; flex-direction: column; }
+  .td-bottom-nav { display: none; }
+
   input, textarea, select {
     background-color: var(--bg-primary) !important;
     border: 1px solid var(--border) !important;
@@ -62,4 +66,12 @@
     border-color: var(--accent) !important;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
+}
+
+/* Mobile responsive — sidebar/bottom-nav swap */
+@media (max-width: 768px) {
+  .td-sidebar { display: none !important; }
+  .td-bottom-nav { display: flex !important; }
+  /* Push content above fixed bottom nav */
+  .td-sidebar ~ * { padding-bottom: 70px !important; }
 }
