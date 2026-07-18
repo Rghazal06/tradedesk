@@ -92,7 +92,7 @@ function SignupForm() {
     if (!data.session) {
       setEmailSent(true);
     } else {
-      router.push("/dashboard");
+      router.push("/onboarding");
     }
   };
 

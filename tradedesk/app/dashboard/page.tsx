@@ -22,6 +22,9 @@ export default function DashboardPage() {
   const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
   const [wsibDue, setWsibDue] = useState<any[]>([]);
   const [certExpiry, setCertExpiry] = useState<string | null>(null);
+  const [onboardingSteps, setOnboardingSteps] = useState<string[]>([]);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const TOTAL_STEPS = 9;
 
   useEffect(() => { load(); }, []);
 
@@ -29,8 +32,10 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
 
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('full_name, onboarding_steps, onboarding_dismissed').eq('id', user.id).single();
     if (profile?.full_name) setUserName(profile.full_name.split(' ')[0]);
+    setOnboardingSteps(profile?.onboarding_steps || []);
+    setOnboardingDismissed(profile?.onboarding_dismissed || false);
 
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -114,6 +119,36 @@ export default function DashboardPage() {
                   {todayAppts.length > 0 ? `You have ${todayAppts.length} appointment${todayAppts.length > 1 ? 's' : ''} today.` : metrics.unpaid > 0 ? `${metrics.unpaid} invoice${metrics.unpaid > 1 ? 's' : ''} waiting on payment.` : 'Everything looks good.'}
                 </p>
               </div>
+
+              {/* Getting Started card */}
+              {!onboardingDismissed && onboardingSteps.length < TOTAL_STEPS && (
+                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '18px 20px', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Getting started</span>
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a' }}>{onboardingSteps.length} of {TOTAL_STEPS} complete</span>
+                      </div>
+                      <div style={{ height: '4px', background: '#f3f4f6', borderRadius: '2px', marginBottom: '10px' }}>
+                        <div style={{ height: '100%', width: `${(onboardingSteps.length / TOTAL_STEPS) * 100}%`, background: '#16a34a', borderRadius: '2px', transition: 'width 0.3s' }} />
+                      </div>
+                      <a href="/onboarding" style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', textDecoration: 'none' }}>
+                        {onboardingSteps.length === 0 ? 'Start the setup guide →' : 'Continue setup →'}
+                      </a>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setOnboardingDismissed(true);
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (user) await supabase.from('profiles').update({ onboarding_dismissed: true }).eq('id', user.id);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#d1d5db', fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '0', flexShrink: 0 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Alerts — only shown when there's something to act on */}
               {(() => {
