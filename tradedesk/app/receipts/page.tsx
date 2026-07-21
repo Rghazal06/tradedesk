@@ -365,6 +365,20 @@ export default function ReceiptsPage() {
             <button onClick={exportCSV} style={{ padding: '9px 16px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
               Export CSV
             </button>
+            <button
+              onClick={() => {
+                setPreviewUrl('');
+                setImageBase64('');
+                setUploadedImageUrl('');
+                setScannedLineItems([]);
+                setForm({ merchant: '', amount: '', subtotal: '', tax: '', date: new Date().toISOString().split('T')[0], category: '', notes: '', job_id: '' });
+                setShowForm(true);
+                setMessage(null);
+              }}
+              style={{ padding: '9px 18px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}
+            >
+              + Add Manually
+            </button>
             <button onClick={() => fileRef.current?.click()} style={{ padding: '9px 20px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '600', fontSize: '13px', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(22,163,74,0.25)' }}>
               Scan Receipt
             </button>

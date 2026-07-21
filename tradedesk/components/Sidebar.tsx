@@ -141,6 +141,12 @@ const Icon: Record<string, () => React.JSX.Element> = {
       <path d="M4 7.5V11c0 0 1.5 2 3.5 2s3.5-2 3.5-2V7.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   ),
+  import: () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M7.5 1v8M7.5 9L5 6.5M7.5 9L10 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M2 11v2a1 1 0 001 1h9a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  ),
   settings: () => (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
       <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.4"/>
@@ -183,6 +189,7 @@ const NAV_GROUPS = [
   ]},
   { label: 'More', items: [
     { label: 'Apprenticeship', href: '/apprenticeship', icon: 'graduation' },
+    { label: 'Import Data', href: '/import', icon: 'import' },
     { label: 'Settings', href: '/settings', icon: 'settings' },
   ]},
 ];

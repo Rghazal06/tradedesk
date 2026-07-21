@@ -12,7 +12,7 @@ const PREMIUM_ROUTES = [
   '/dashboard', '/quotes', '/invoices', '/jobs', '/wsib',
   '/appointments', '/clients', '/assistant', '/profit',
   '/receipts', '/apprenticeship', '/settings',
-  '/pricebook', '/leads', '/crew', '/insurance',
+  '/pricebook', '/leads', '/crew', '/insurance', '/import',
 ];
 
 export async function middleware(req: NextRequest) {

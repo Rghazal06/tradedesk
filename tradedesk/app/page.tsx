@@ -305,6 +305,46 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Switch from spreadsheets */}
+      <section style={{ background: '#0a0a0a', padding: '80px 48px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center' as const, marginBottom: '48px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: '100px', padding: '5px 16px', fontSize: '12px', fontWeight: '700', color: '#4ade80', marginBottom: '20px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+              Zero learning curve
+            </div>
+            <h2 style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#ffffff', margin: '0 0 16px' }}>
+              Already using spreadsheets or QuickBooks?
+            </h2>
+            <p style={{ fontSize: '17px', color: '#8faac4', lineHeight: '1.7', margin: '0 auto', maxWidth: '580px' }}>
+              Import everything in minutes. Your clients, quotes, invoices, jobs, and expense history come with you — nothing gets left behind.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '40px' }}>
+            {[
+              { label: 'Clients', desc: 'Name, phone, email', color: '#0369a1' },
+              { label: 'Quotes & Invoices', desc: 'Full billing history', color: '#7c3aed' },
+              { label: 'Receipts', desc: 'All expense records', color: '#15803d' },
+              { label: 'Jobs', desc: 'Past job history', color: '#b45309' },
+            ].map(item => (
+              <div key={item.label} style={{ background: '#141c2e', border: '1px solid #1e2d45', borderRadius: '12px', padding: '20px 18px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color, marginBottom: '12px' }} />
+                <p style={{ fontWeight: '700', color: '#f0f4ff', fontSize: '14px', margin: '0 0 4px' }}>{item.label}</p>
+                <p style={{ color: '#8faac4', fontSize: '12px', margin: 0 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: '#141c2e', border: '1px solid #1e2d45', borderRadius: '14px', padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' as const }}>
+            <div>
+              <p style={{ fontWeight: '700', color: '#f0f4ff', fontSize: '16px', margin: '0 0 6px' }}>Upload a CSV or Excel file — that's it.</p>
+              <p style={{ color: '#8faac4', fontSize: '14px', margin: 0 }}>TradeDesk auto-detects your columns, you confirm the mapping, and your data is in. Works with QuickBooks exports, Google Sheets, and any spreadsheet.</p>
+            </div>
+            <a href="/signup" style={{ flexShrink: 0, padding: '12px 28px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', boxShadow: '0 4px 16px rgba(22,163,74,0.3)', whiteSpace: 'nowrap' as const }}>
+              Start free trial
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Early Access */}
       <section className="td-section" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '80px 48px' }}>
         <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' as const }}>
