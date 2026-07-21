@@ -351,17 +351,32 @@ export default function ReceiptsPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .rec-topbar { padding: 14px 16px !important; flex-wrap: wrap !important; gap: 10px !important; }
+          .rec-topbar-actions { width: 100% !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+          .rec-topbar-actions button:last-of-type { grid-column: span 2 !important; }
+          .rec-body { padding: 16px !important; }
+          .rec-scan-grid { grid-template-columns: 1fr !important; }
+          .rec-scan-img { border-right: none !important; border-bottom: 1px solid #f3f4f6 !important; flex-direction: row !important; flex-wrap: wrap !important; justify-content: center !important; }
+          .rec-scan-img img { width: 120px !important; height: 160px !important; }
+          .rec-filters { flex-wrap: wrap !important; gap: 8px !important; }
+          .rec-filters > * { flex: 1 1 140px !important; }
+          .rec-view-grid { grid-template-columns: 1fr !important; }
+          .rec-view-img { border-right: none !important; border-bottom: 1px solid #f3f4f6 !important; }
+        }
+      `}</style>
       <Sidebar activePath="/receipts" />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div className="rec-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Receipts</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>AI scans every line item — ready for tax time</p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="rec-topbar-actions" style={{ display: 'flex', gap: '10px' }}>
             <button onClick={exportCSV} style={{ padding: '9px 16px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
               Export CSV
             </button>
@@ -386,7 +401,7 @@ export default function ReceiptsPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+        <div className="rec-body" style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
 
           {/* Toast */}
           {message && (
@@ -403,9 +418,9 @@ export default function ReceiptsPage() {
                 <button onClick={() => { setShowForm(false); setPreviewUrl(''); setImageBase64(''); setScannedLineItems([]); }} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '0 4px' }}>×</button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 0 }}>
+              <div className="rec-scan-grid" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 0 }}>
                 {/* Left: image + scan button */}
-                <div style={{ padding: '20px', borderRight: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                <div className="rec-scan-img" style={{ padding: '20px', borderRight: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
                   {previewUrl && (
                     <div style={{ position: 'relative', width: '160px' }}>
                       <img src={previewUrl} alt="Receipt" style={{ width: '160px', height: '210px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'block' }} />
@@ -693,9 +708,9 @@ export default function ReceiptsPage() {
             </div>
 
             {/* Modal body */}
-            <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '260px 1fr' }}>
+            <div className="rec-view-grid" style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '260px 1fr' }}>
               {/* Left: receipt photo */}
-              <div style={{ borderRight: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', gap: '12px', overflowY: 'auto' }}>
+              <div className="rec-view-img" style={{ borderRight: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', gap: '12px', overflowY: 'auto' }}>
                 {viewReceipt.image_url ? (
                   <>
                     <img

@@ -87,15 +87,15 @@ export default function ProfitAnalyzerPage() {
       
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px' }}>
+        <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px' }}>
           <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>AI Profit Analyzer</h1>
           <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>AI-powered insights to help you grow your business</p>
         </div>
 
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1, maxWidth: '900px' }}>
+        <div className="td-body" style={{ padding: '32px', overflowY: 'auto', flex: 1, maxWidth: '900px' }}>
 
           {/* Data Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>

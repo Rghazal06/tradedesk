@@ -334,6 +334,18 @@ export default function JobsPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .jobs-topbar { padding: 14px 16px !important; }
+          .jobs-body { padding: 16px !important; }
+          .jobs-form-grid { grid-template-columns: 1fr !important; }
+          .jobs-form-grid > [style*="span 2"] { grid-column: span 1 !important; }
+          .jobs-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+          .jobs-expanded { padding: 16px !important; }
+          .jobs-expanded-grid { grid-template-columns: 1fr !important; }
+          .jobs-photos-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+      `}</style>
       <Sidebar activePath="/jobs" />
 
       {/* ── Lightbox ── */}
@@ -466,7 +478,7 @@ export default function JobsPage() {
 
       {/* ── Main ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="jobs-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Jobs</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Manage and document all your jobs</p>
@@ -476,7 +488,7 @@ export default function JobsPage() {
           </button>
         </div>
 
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+        <div className="jobs-body" style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
           {message && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>{message}</div>
           )}
@@ -485,7 +497,7 @@ export default function JobsPage() {
           {showForm && (
             <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Create New Job</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              <div className="jobs-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 {[
                   { label: 'Job Title', key: 'title', placeholder: 'Kitchen rewire' },
                   { label: 'Customer Name', key: 'customer_name', placeholder: 'John Smith' },
@@ -529,8 +541,8 @@ export default function JobsPage() {
                 <button onClick={() => setShowForm(true)} style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>Create your first job</button>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="jobs-table-wrap" style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                       {['Job', 'Customer', 'Date', 'Status', 'Photos', 'Costing', 'Actions'].map(h => (

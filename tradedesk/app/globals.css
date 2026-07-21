@@ -74,4 +74,31 @@
   .td-bottom-nav { display: flex !important; }
   /* Push content above fixed bottom nav */
   .td-sidebar ~ * { padding-bottom: 70px !important; }
+
+  /* Universal list-page top bars: stack heading + action button */
+  .td-topbar {
+    padding: 14px 16px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  .td-topbar > a,
+  .td-topbar > button {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+  /* Universal list-page body padding */
+  .td-body { padding: 16px !important; }
+
+  /* Modal full-screen on mobile */
+  .td-modal {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    height: 100vh !important;
+  }
+  .td-modal-body-grid {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
 }

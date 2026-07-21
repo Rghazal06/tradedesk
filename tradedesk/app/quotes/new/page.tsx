@@ -147,15 +147,28 @@ export default function NewQuotePage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+          .qn-topbar { padding: 14px 16px !important; flex-wrap: wrap !important; gap: 10px !important; }
+          .qn-topbar a { font-size: 12px !important; }
+          .qn-body { padding: 16px !important; }
+          .qn-grid-2 { grid-template-columns: 1fr !important; }
+          .qn-grid-2 > [style*="span 2"] { grid-column: span 1 !important; }
+          .qn-ai-row { grid-template-columns: 1fr !important; }
+          .qn-ai-row button { width: 100% !important; justify-content: center !important; }
+          .qn-totals { max-width: 100% !important; margin-left: 0 !important; }
+          .qn-actions { flex-wrap: wrap !important; }
+          .qn-actions button, .qn-actions a { flex: 1 !important; text-align: center !important; justify-content: center !important; }
+        }
+      `}</style>
       <Sidebar activePath="/quotes" />
 
-      
-
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="qn-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Create New Quote</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Welcome back, {userName}</p>
@@ -165,7 +178,7 @@ export default function NewQuotePage() {
           </a>
         </div>
 
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+        <div className="qn-body" style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
 
           {errorMessage && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px' }}>
@@ -181,7 +194,7 @@ export default function NewQuotePage() {
           {/* Customer Info */}
           <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Customer Information</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div className="qn-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customer Name</label>
                 <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="John Smith" style={inputStyle} />
@@ -200,7 +213,7 @@ export default function NewQuotePage() {
           {/* Job Description + AI */}
           <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Job Details</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'end', marginBottom: '16px' }}>
+            <div className="qn-ai-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '16px', alignItems: 'end', marginBottom: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Trade Type (for AI)</label>
                 <select value={tradeType} onChange={e => setTradeType(e.target.value)} style={inputStyle}>
@@ -230,7 +243,6 @@ export default function NewQuotePage() {
                 ) : 'Generate with AI'}
               </button>
             </div>
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Description</label>
               <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={4} placeholder="Describe the scope of work..."
@@ -292,7 +304,7 @@ export default function NewQuotePage() {
             </div>
 
             {/* Totals */}
-            <div style={{ marginTop: '16px', marginLeft: 'auto', maxWidth: '300px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+            <div className="qn-totals" style={{ marginTop: '16px', marginLeft: 'auto', maxWidth: '300px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
               {[
                 { label: 'Subtotal', value: formatCurrency(subtotal), bold: false },
                 { label: 'HST (13%)', value: formatCurrency(hst), bold: false },
@@ -315,7 +327,7 @@ export default function NewQuotePage() {
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="qn-actions" style={{ display: 'flex', gap: '12px' }}>
             <button onClick={handleSaveQuote} disabled={isSaving} style={{
               padding: '12px 28px', background: '#16a34a', color: 'white',
               border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '700',

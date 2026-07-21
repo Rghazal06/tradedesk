@@ -321,15 +321,15 @@ export default function ImportPage() {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: FF }}>
       <Sidebar activePath="/import" />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px' }}>
+        <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px' }}>
           <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Import Data</h1>
           <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Bring your existing data into TradeDesk from any spreadsheet or software</p>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+        <div className="td-body" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
           <div style={{ maxWidth: '740px', margin: '0 auto' }}>
 
             {/* Step indicator */}

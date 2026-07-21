@@ -109,12 +109,19 @@ export default function LeadsPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .leads-split { flex-direction: column !important; }
+          .leads-list-panel { width: 100% !important; min-width: unset !important; max-height: 45vh !important; }
+          .leads-convo-panel { flex: 1 !important; min-height: 0 !important; }
+        }
+      `}</style>
       <Sidebar activePath="/leads" />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>SMS Leads</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>AI-qualified leads from missed calls</p>
@@ -131,10 +138,10 @@ export default function LeadsPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="leads-split" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
           {/* Lead list panel */}
-          <div style={{ width: '360px', minWidth: '360px', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', background: 'white', overflow: 'hidden' }}>
+          <div className="leads-list-panel" style={{ width: '360px', minWidth: '360px', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', background: 'white', overflow: 'hidden' }}>
 
             {/* Stats + filter */}
             <div style={{ padding: '16px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
@@ -209,7 +216,7 @@ export default function LeadsPage() {
           </div>
 
           {/* Conversation panel */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="leads-convo-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {!selectedLead ? (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
                 <div style={{ textAlign: 'center' }}>

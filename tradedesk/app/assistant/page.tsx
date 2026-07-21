@@ -101,10 +101,10 @@ export default function AssistantPage() {
       
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>AI Assistant</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Ask anything about your business</p>

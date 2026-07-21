@@ -169,7 +169,7 @@ export default function InsurancePage(): React.JSX.Element {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#fafafa' }}>
       <Sidebar activePath="/insurance" />
-      <div style={{ flex: 1, padding: '40px 40px 60px', maxWidth: '1100px' }}>
+      <div className="td-body" style={{ flex: 1, padding: '40px 40px 60px', maxWidth: '1100px', minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>

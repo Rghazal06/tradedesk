@@ -108,15 +108,25 @@ function SettingsContent() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .set-topbar { padding: 14px 16px !important; flex-wrap: wrap !important; gap: 12px !important; }
+          .set-topbar button { width: 100% !important; }
+          .set-body { padding: 16px !important; }
+          .set-grid-2 { grid-template-columns: 1fr !important; }
+          .set-grid-2 > [style*="span 2"] { grid-column: span 1 !important; }
+          .set-ref-cards { grid-template-columns: 1fr !important; }
+          .set-pub-grid { grid-template-columns: 1fr !important; }
+          .set-pub-grid > [style*="span 2"] { grid-column: span 1 !important; }
+        }
+      `}</style>
       <Sidebar activePath="/settings" />
 
-      
-
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="set-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Settings</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Manage your account and business information</p>
@@ -131,7 +141,7 @@ function SettingsContent() {
           </button>
         </div>
 
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1, maxWidth: '800px' }}>
+        <div className="set-body" style={{ padding: '32px', overflowY: 'auto', flex: 1, maxWidth: '800px' }}>
 
           {message && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
@@ -141,10 +151,13 @@ function SettingsContent() {
 
           {/* Personal Info */}
           <div style={sectionStyle}>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Personal Information</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: 0 }}>Personal Information</h2>
+              <span style={{ fontSize: '12px', color: '#6b7280' }}><span style={{ color: '#dc2626' }}>*</span> Required</span>
+            </div>
+            <div className="set-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
               <div>
-                <label style={labelStyle}>Full Name</label>
+                <label style={labelStyle}>Full Name <span style={{ color: '#dc2626' }}>*</span></label>
                 <input value={profile.full_name} onChange={e => setProfile({...profile, full_name: e.target.value})} style={inputStyle} />
               </div>
               <div>
@@ -152,11 +165,11 @@ function SettingsContent() {
                 <input value={profile.email} disabled style={{ ...inputStyle, color: '#9ca3af', cursor: 'not-allowed' }} />
               </div>
               <div>
-                <label style={labelStyle}>Phone</label>
+                <label style={labelStyle}>Phone <span style={{ color: '#dc2626' }}>*</span></label>
                 <input value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} placeholder="519-555-0000" style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Trade Type</label>
+                <label style={labelStyle}>Trade Type <span style={{ color: '#dc2626' }}>*</span></label>
                 <select value={profile.trade_type} onChange={e => setProfile({...profile, trade_type: e.target.value})} style={inputStyle}>
                   <option value="">Select trade</option>
                   {['Electrician', 'Plumber', 'HVAC', 'General Contractor', 'Roofer', 'Other'].map(t => <option key={t} value={t}>{t}</option>)}
@@ -168,9 +181,9 @@ function SettingsContent() {
           {/* Business Info */}
           <div style={sectionStyle}>
             <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Business Information</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div className="set-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
               <div>
-                <label style={labelStyle}>Company Name</label>
+                <label style={labelStyle}>Company Name <span style={{ color: '#dc2626' }}>*</span></label>
                 <input value={profile.company_name} onChange={e => setProfile({...profile, company_name: e.target.value})} placeholder="Smith Electrical Ltd." style={inputStyle} />
               </div>
               <div>
@@ -204,7 +217,7 @@ function SettingsContent() {
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 20px' }}>Refer a contractor and you both get 1 month free.</p>
             {referralCode ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="set-ref-cards" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '16px' }}>
                     <p style={{ color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Your Referral Code</p>
                     <p style={{ color: '#15803d', fontSize: '22px', fontWeight: '800', margin: '0', letterSpacing: '1px' }}>{referralCode}</p>
@@ -265,7 +278,7 @@ function SettingsContent() {
                 </div>
               </label>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="set-pub-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>Profile Slug</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
@@ -416,7 +429,7 @@ function SettingsContent() {
                 </div>
 
                 {/* Slot duration + notice */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="set-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label style={labelStyle}>Slot Duration</label>
                     <select value={profile.booking_slot_minutes} onChange={e => setProfile({ ...profile, booking_slot_minutes: parseInt(e.target.value) })} style={inputStyle}>
@@ -470,7 +483,7 @@ function SettingsContent() {
                 Upgrade to Pro
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+            <div className="set-ref-cards" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
               {[
                 { name: 'Starter', price: '$99/month', desc: 'Quotes, Invoices, WSIB, Jobs', priceId: 'price_1TYyLwHtCISkRQL6TBKz9xQh', highlight: false },
                 { name: 'Pro', price: '$199/month', desc: 'Everything + AI features + Priority Support', priceId: 'price_1TYyMaHtCISkRQL6RWAB2eoo', highlight: true },

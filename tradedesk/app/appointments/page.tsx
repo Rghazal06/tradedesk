@@ -149,20 +149,29 @@ export default function AppointmentsPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .apt-topbar { padding: 14px 16px !important; flex-wrap: wrap !important; gap: 10px !important; }
+          .apt-topbar-actions { width: 100% !important; justify-content: space-between !important; }
+          .apt-topbar-actions button:last-child { flex: 1 !important; }
+          .apt-body { padding: 16px !important; }
+          .apt-form-grid { grid-template-columns: 1fr !important; }
+          .apt-form-grid > [style*="span 2"] { grid-column: span 1 !important; }
+          .apt-form-grid > [style*="span 3"] { grid-column: span 1 !important; }
+        }
+      `}</style>
       <Sidebar activePath="/appointments" />
 
-      
-
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="apt-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Appointments</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Schedule and manage customer appointments</p>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="apt-topbar-actions" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
               {(['list', 'calendar'] as const).map(v => (
                 <button key={v} onClick={() => setView(v)} style={{
@@ -186,7 +195,7 @@ export default function AppointmentsPage() {
           </div>
         </div>
 
-        <div style={{ padding: '24px 32px', overflowY: 'auto', flex: 1 }}>
+        <div className="apt-body" style={{ padding: '24px 32px', overflowY: 'auto', flex: 1 }}>
           
           {message && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
@@ -198,7 +207,7 @@ export default function AppointmentsPage() {
           {showForm && (
             <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
               <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 20px' }}>Book New Appointment</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <div className="apt-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                 {[
                   { label: 'Customer Name', key: 'customer_name', placeholder: 'John Smith', type: 'text' },
                   { label: 'Phone Number', key: 'customer_phone', placeholder: '519-555-0000', type: 'text' },

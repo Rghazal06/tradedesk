@@ -163,10 +163,10 @@ export default function PricebookPage() {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Sidebar activePath="/pricebook" />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Pricebook</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Your flat-rate services and materials — pull into quotes with one click</p>
@@ -178,7 +178,7 @@ export default function PricebookPage() {
           </button>
         </div>
 
-        <div style={{ padding: '28px 32px', flex: 1, overflowY: 'auto' }}>
+        <div className="td-body" style={{ padding: '28px 32px', flex: 1, overflowY: 'auto' }}>
 
           {message && (
             <div style={{ background: message.type === 'error' ? '#fef2f2' : '#f0fdf4', border: `1px solid ${message.type === 'error' ? '#fecaca' : '#bbf7d0'}`, borderRadius: '8px', padding: '11px 16px', marginBottom: '20px', color: message.type === 'error' ? '#991b1b' : '#15803d', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>

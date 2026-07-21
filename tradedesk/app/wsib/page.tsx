@@ -123,10 +123,10 @@ export default function WSIBPage() {
       
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Top bar */}
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>WSIB Tracking</h1>
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0' }}>Ontario workplace insurance compliance</p>
@@ -138,7 +138,7 @@ export default function WSIBPage() {
           }}>+ Log WSIB Period</button>
         </div>
 
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+        <div className="td-body" style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
 
           {message && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
