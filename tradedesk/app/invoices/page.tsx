@@ -187,6 +187,11 @@ export default function InvoicesPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                 <button
+                                  onClick={() => router.push(`/invoices/${invoice.id}/edit`)}
+                                  style={{ padding: '6px 12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                  Edit
+                                </button>
+                                <button
                                   onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))}
                                   style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
                                   PDF
