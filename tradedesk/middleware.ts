@@ -70,7 +70,11 @@ export async function middleware(req: NextRequest) {
   const trialEnd = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
   const isOnTrial = trialEnd && trialEnd > now;
   const isActive = profile.subscription_status === 'active';
-  const isPro = isActive && profile.subscription_plan === 'pro';
+  const isEnterprise = isActive && profile.subscription_plan === 'enterprise';
+  const isPro = isActive && (profile.subscription_plan === 'pro' || isEnterprise);
+
+  // Enterprise always has full access — skip all further checks
+  if (isEnterprise) return res;
 
   // Pro-only routes
   if (PRO_ONLY_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))) {

@@ -18,6 +18,7 @@ export default function LandingPage() {
           .td-comparison-table > * { min-width: 560px; }
           .td-3col { grid-template-columns: 1fr !important; }
           .td-2col { grid-template-columns: 1fr !important; max-width: 100% !important; }
+          .td-pricing-grid { grid-template-columns: 1fr !important; max-width: 100% !important; }
           .td-h2 { font-size: 26px !important; letter-spacing: -0.5px !important; }
           .td-cta-h2 { font-size: 30px !important; letter-spacing: -1px !important; line-height: 1.15 !important; }
           .td-footer-inner { padding: 24px 20px !important; flex-direction: column !important; text-align: center !important; }
@@ -345,48 +346,82 @@ export default function LandingPage() {
             <h2 className="td-h2" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', color: '#0a0a0a', margin: '0 0 12px' }}>Less than Jobber. More for Ontario.</h2>
             <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>14-day free trial. No credit card. Cancel any time. Price shown in Canadian dollars.</p>
           </div>
-          <div className="td-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', maxWidth: '780px', margin: '0 auto' }}>
-            {[
-              {
-                name: 'Starter', price: '$99', period: '/mo CAD',
-                desc: 'Everything you need to run your trade business compliantly.',
-                features: ['Unlimited quotes + invoices', 'HST auto-calculated', 'WSIB tracking + reminders', 'Jobs + appointment scheduling', 'Stripe payment links', 'Client CRM', 'Receipt scanning + AI extraction', 'Crew + clearance cert tracking'],
-                highlight: false,
-              },
-              {
-                name: 'Pro', price: '$199', period: '/mo CAD',
-                desc: 'AI-powered tools for contractors who want the edge.',
-                features: ['Everything in Starter', 'AI Quote Generator (GPT-4o)', 'AI Profit Analyzer', 'AI Business Assistant', 'Apprenticeship hour tracker', 'Public contractor profile', 'Referral program', 'Priority support'],
-                highlight: true,
-              },
-            ].map(plan => (
-              <div key={plan.name} style={{ border: `2px solid ${plan.highlight ? '#16a34a' : '#e5e7eb'}`, borderRadius: '16px', padding: '32px', position: 'relative' as const, background: plan.highlight ? '#f0fdf4' : 'white' }}>
-                {plan.highlight && (
-                  <div style={{ position: 'absolute' as const, top: '-13px', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: 'white', borderRadius: '100px', padding: '4px 18px', fontSize: '11px', fontWeight: '800', whiteSpace: 'nowrap' as const, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
-                    Most Popular
-                  </div>
-                )}
-                <p style={{ fontWeight: '800', fontSize: '18px', color: '#111', margin: '0 0 4px' }}>{plan.name}</p>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', margin: '0 0 8px' }}>
-                  <span style={{ fontSize: '46px', fontWeight: '900', color: '#0a0a0a', letterSpacing: '-2px', lineHeight: '1' }}>{plan.price}</span>
-                  <span style={{ color: '#6b7280', fontSize: '14px', marginBottom: '6px' }}>{plan.period}</span>
-                </div>
-                <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>{plan.desc}</p>
-                <Link href="/signup" style={{ display: 'block', textAlign: 'center' as const, padding: '13px', background: plan.highlight ? '#16a34a' : 'white', color: plan.highlight ? 'white' : '#16a34a', border: `1px solid ${plan.highlight ? '#16a34a' : '#bbf7d0'}`, borderRadius: '8px', fontWeight: '700', fontSize: '15px', textDecoration: 'none', marginBottom: '24px' }}>
-                  Start Free Trial
-                </Link>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
-                  {plan.features.map(f => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '16px', height: '16px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </div>
-                      <span style={{ fontSize: '14px', color: '#374151' }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
+          <div className="td-pricing-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', maxWidth: '1060px', margin: '0 auto' }}>
+
+            {/* Starter */}
+            <div style={{ border: '2px solid #e5e7eb', borderRadius: '16px', padding: '32px', position: 'relative' as const, background: 'white' }}>
+              <p style={{ fontWeight: '800', fontSize: '18px', color: '#111', margin: '0 0 4px' }}>Starter</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', margin: '0 0 8px' }}>
+                <span style={{ fontSize: '42px', fontWeight: '900', color: '#0a0a0a', letterSpacing: '-2px', lineHeight: '1' }}>$99</span>
+                <span style={{ color: '#6b7280', fontSize: '14px', marginBottom: '6px' }}>/mo CAD</span>
               </div>
-            ))}
+              <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>Everything you need to run your trade business compliantly.</p>
+              <Link href="/signup" style={{ display: 'block', textAlign: 'center' as const, padding: '12px', background: 'white', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', marginBottom: '24px' }}>
+                Start Free Trial
+              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                {['Unlimited quotes + invoices', 'HST auto-calculated', 'WSIB tracking + reminders', 'Jobs + appointment scheduling', 'Stripe payment links', 'Client CRM', 'Receipt scanning + AI extraction', 'Crew + clearance cert tracking'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '16px', height: '16px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#374151' }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pro */}
+            <div style={{ border: '2px solid #16a34a', borderRadius: '16px', padding: '32px', position: 'relative' as const, background: '#f0fdf4' }}>
+              <div style={{ position: 'absolute' as const, top: '-13px', left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: 'white', borderRadius: '100px', padding: '4px 18px', fontSize: '11px', fontWeight: '800', whiteSpace: 'nowrap' as const, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+                Most Popular
+              </div>
+              <p style={{ fontWeight: '800', fontSize: '18px', color: '#111', margin: '0 0 4px' }}>Pro</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', margin: '0 0 8px' }}>
+                <span style={{ fontSize: '42px', fontWeight: '900', color: '#0a0a0a', letterSpacing: '-2px', lineHeight: '1' }}>$199</span>
+                <span style={{ color: '#6b7280', fontSize: '14px', marginBottom: '6px' }}>/mo CAD</span>
+              </div>
+              <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>AI-powered tools for contractors who want the edge.</p>
+              <Link href="/signup" style={{ display: 'block', textAlign: 'center' as const, padding: '12px', background: '#16a34a', color: 'white', border: '1px solid #16a34a', borderRadius: '8px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', marginBottom: '24px' }}>
+                Start Free Trial
+              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                {['Everything in Starter', 'AI Quote Generator (GPT-4o)', 'AI Profit Analyzer', 'AI Business Assistant', 'Apprenticeship hour tracker', 'Public contractor profile', 'Referral program', 'Priority support'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '16px', height: '16px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#374151' }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Enterprise */}
+            <div style={{ border: '2px solid #1e2d45', borderRadius: '16px', padding: '32px', position: 'relative' as const, background: '#141c2e' }}>
+              <div style={{ display: 'inline-block', background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: '100px', padding: '3px 12px', fontSize: '10px', fontWeight: '800', color: '#4ade80', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '12px' }}>
+                Custom Pricing
+              </div>
+              <p style={{ fontWeight: '800', fontSize: '18px', color: '#f0f4ff', margin: '0 0 4px' }}>Enterprise</p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', margin: '0 0 8px' }}>
+                <span style={{ fontSize: '42px', fontWeight: '900', color: '#f0f4ff', letterSpacing: '-2px', lineHeight: '1' }}>Custom</span>
+              </div>
+              <p style={{ color: '#8faac4', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>For larger companies with multiple crews, estimators, and project managers.</p>
+              <a href="mailto:rayanghazal06@gmail.com?subject=Enterprise%20Plan%20Inquiry" style={{ display: 'block', textAlign: 'center' as const, padding: '12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', marginBottom: '24px' }}>
+                Talk to us
+              </a>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
+                {['Everything in Pro', 'Multiple user accounts', 'Company-wide reporting', 'Dedicated account manager', 'Custom onboarding + training', 'Same-day support SLA', 'Volume pricing', 'Custom integrations on request'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '16px', height: '16px', background: 'rgba(22,163,74,0.2)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#8faac4' }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
           <p style={{ textAlign: 'center' as const, color: '#9ca3af', fontSize: '13px', marginTop: '28px' }}>
             Jobber's Connect plan starts at $169 USD/month (~$235 CAD). TradeDesk Starter is $99 CAD — and actually knows what WSIB is.

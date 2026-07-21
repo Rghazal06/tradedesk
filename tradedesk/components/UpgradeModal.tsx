@@ -84,6 +84,20 @@ export default function UpgradeModal({ reason = 'required', email, onClose }: Up
           </div>
         </div>
 
+        {/* Enterprise row */}
+        <div style={{ border: '1px solid #1e2d45', background: '#141c2e', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+          <div>
+            <p style={{ fontWeight: '700', color: '#f0f4ff', margin: '0 0 2px', fontSize: '13px' }}>Enterprise — Custom pricing</p>
+            <p style={{ color: '#8faac4', fontSize: '12px', margin: 0 }}>Multiple users, dedicated support, custom onboarding</p>
+          </div>
+          <a
+            href="mailto:rayanghazal06@gmail.com?subject=Enterprise%20Plan%20Inquiry"
+            style={{ flexShrink: 0, padding: '8px 16px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '12px', textDecoration: 'none', whiteSpace: 'nowrap' as const }}
+          >
+            Talk to us
+          </a>
+        </div>
+
         {onClose && (
           <button onClick={onClose} style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>
             Maybe later
