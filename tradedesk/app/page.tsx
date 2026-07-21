@@ -305,36 +305,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="td-section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 48px' }}>
-        <div style={{ textAlign: 'center' as const, marginBottom: '56px' }}>
-          <p style={{ fontSize: '12px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' as const, letterSpacing: '1px', margin: '0 0 12px' }}>Ontario contractors</p>
-          <h2 className="td-h2" style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a', margin: 0 }}>From trades people who switched</h2>
-        </div>
-        <div className="td-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-          {[
-            { quote: 'The AI quote generator alone saves me 2 hours a week. I describe the job on site and it builds the whole thing with line items and HST. Customers get a professional quote in two minutes.', name: 'Mike Karalus', role: 'Electrician · London, ON' },
-            { quote: 'I used to dread WSIB filing every quarter. I\'d have to dig through old invoices and spreadsheets. Now TradeDesk has everything ready — earnings, premium, due date. Takes me five minutes.', name: 'Jason Patel', role: 'Plumber · Hamilton, ON' },
-            { quote: 'Customers pay the same day I send the invoice now. Before TradeDesk I was chasing cheques for 60 days. The payment link changes everything. Night and day.', name: 'Rick Fortier', role: 'HVAC Tech · Ottawa, ON' },
-          ].map(t => (
-            <div key={t.name} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', gap: '2px', marginBottom: '16px' }}>
-                {[1,2,3,4,5].map(i => (
-                  <svg key={i} width="14" height="14" viewBox="0 0 14 14" fill="#f59e0b"><path d="M7 1l1.5 4H13l-3.5 2.5 1.3 4L7 9l-3.8 2.5L4.5 7.5 1 5h4.5z"/></svg>
-                ))}
-              </div>
-              <p style={{ fontSize: '15px', color: '#374151', lineHeight: '1.75', margin: '0 0 20px' }}>"{t.quote}"</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '38px', height: '38px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '15px', flexShrink: 0 }}>
-                  {t.name.charAt(0)}
+      {/* Early Access */}
+      <section className="td-section" style={{ background: '#f8fafc', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '80px 48px' }}>
+        <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' as const }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '100px', padding: '5px 16px', fontSize: '12px', fontWeight: '700', color: '#15803d', marginBottom: '24px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><circle cx="4" cy="4" r="4" fill="#16a34a"/></svg>
+            Now in early access
+          </div>
+          <h2 className="td-h2" style={{ fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', color: '#0a0a0a', margin: '0 0 16px' }}>
+            Be one of the first contractors on TradeDesk.
+          </h2>
+          <p style={{ fontSize: '17px', color: '#4b5563', lineHeight: '1.75', margin: '0 0 40px', maxWidth: '580px', marginLeft: 'auto', marginRight: 'auto' }}>
+            We're onboarding Ontario contractors directly — no waitlist. You get a 14-day free trial and a direct line to the founder. If something doesn't work for how you run your business, tell us and we'll fix it.
+          </p>
+          <div className="td-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '40px', textAlign: 'left' as const }}>
+            {[
+              { title: 'Direct access to the founder', body: 'You\'re not ticket #4821. You talk to the person who built this. Issues get fixed fast.' },
+              { title: 'Shape the product', body: 'Early users tell us what to build next. Your workflow, your problems — we build around them.' },
+              { title: 'Locked-in pricing', body: 'Early access users keep their rate. Price never goes up as long as you stay subscribed.' },
+            ].map(item => (
+              <div key={item.title} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '22px' }}>
+                <div style={{ width: '28px', height: '28px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                  <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l4 4 6-8" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
-                <div>
-                  <p style={{ fontWeight: '700', color: '#111', fontSize: '14px', margin: 0 }}>{t.name}</p>
-                  <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>{t.role}</p>
-                </div>
+                <p style={{ fontWeight: '700', color: '#111', fontSize: '14px', margin: '0 0 6px' }}>{item.title}</p>
+                <p style={{ color: '#6b7280', fontSize: '13px', lineHeight: '1.6', margin: 0 }}>{item.body}</p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Link href="/signup" style={{ display: 'inline-block', padding: '14px 32px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '800', fontSize: '16px', textDecoration: 'none', boxShadow: '0 4px 20px rgba(22,163,74,0.3)' }}>
+            Start your free trial
+          </Link>
+          <p style={{ color: '#9ca3af', fontSize: '13px', marginTop: '12px' }}>14-day free trial. No credit card. Cancel any time.</p>
         </div>
       </section>
 
