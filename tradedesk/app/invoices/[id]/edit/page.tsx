@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
+import { parseLineItemsFromDb } from "../../../../lib/generatePDF";
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from '../../../../components/Sidebar';
 
@@ -96,13 +97,14 @@ export default function EditInvoicePage(): React.JSX.Element {
       setInvoiceNotes(invoice.notes ?? '');
       setInvoiceStatus(invoice.status ?? 'unpaid');
 
-      const stored = (invoice.line_items ?? []) as Array<{ description: string; quantity: number; unit_price: number }>;
-      if (stored.length > 0) {
-        setLineItems(stored.map((item, i) => ({
+      // Parse line items using the same robust helper used by the PDF generator
+      const parsed = parseLineItemsFromDb(invoice.line_items);
+      if (parsed.length > 0) {
+        setLineItems(parsed.map((item, i) => ({
           id: Date.now() + i,
-          description: item.description ?? '',
-          quantity: String(item.quantity ?? 1),
-          unitPrice: String(item.unit_price ?? 0),
+          description: item.description,
+          quantity: String(item.quantity),
+          unitPrice: String(item.unit_price),
         })));
       }
 
