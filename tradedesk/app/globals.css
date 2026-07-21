@@ -50,6 +50,12 @@
   .td-sidebar { display: flex; flex-direction: column; }
   .td-bottom-nav { display: none; }
 
+  /* List pages: desktop shows table, mobile shows cards */
+  .q-desktop-table { display: block; }
+  .q-mobile-cards { display: none !important; }
+  .inv-desktop-table { display: block; }
+  .inv-mobile-cards { display: none !important; }
+
   input, textarea, select {
     background-color: var(--bg-primary) !important;
     border: 1px solid var(--border) !important;
@@ -89,6 +95,12 @@
   }
   /* Universal list-page body padding */
   .td-body { padding: 16px !important; }
+
+  /* List pages: swap table → cards on mobile */
+  .q-desktop-table { display: none !important; }
+  .q-mobile-cards { display: flex !important; }
+  .inv-desktop-table { display: none !important; }
+  .inv-mobile-cards { display: flex !important; }
 
   /* Modal full-screen on mobile */
   .td-modal {

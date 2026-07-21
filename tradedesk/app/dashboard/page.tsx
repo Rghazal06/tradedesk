@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
-  const [metrics, setMetrics] = useState({ revenue: 0, unpaid: 0, activeJobs: 0, quotesMonth: 0 });
+  const [metrics, setMetrics] = useState({ revenue: 0, hst: 0, unpaid: 0, activeJobs: 0, quotesMonth: 0 });
   const [unpaidInvoices, setUnpaidInvoices] = useState<any[]>([]);
   const [todayAppts, setTodayAppts] = useState<any[]>([]);
   const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
@@ -43,7 +43,7 @@ export default function DashboardPage() {
     const in7Days = new Date(now.getTime() + 7 * 86400000).toISOString().split('T')[0];
 
     const [paidInvoices, unpaidInvs, activeJobsRes, quotesRes, recentQ, appts, wsib, profileRes] = await Promise.all([
-      supabase.from('invoices').select('total').eq('user_id', user.id).eq('status', 'paid').gte('created_at', firstOfMonth),
+      supabase.from('invoices').select('total, hst').eq('user_id', user.id).eq('status', 'paid').gte('created_at', firstOfMonth),
       supabase.from('invoices').select('id, customer_name, total, created_at, payment_link').eq('user_id', user.id).eq('status', 'unpaid').order('created_at', { ascending: true }).limit(5),
       supabase.from('jobs').select('id').eq('user_id', user.id).in('status', ['scheduled', 'in progress']),
       supabase.from('quotes').select('id').eq('user_id', user.id).gte('created_at', firstOfMonth),
@@ -54,7 +54,8 @@ export default function DashboardPage() {
     ]);
 
     const revenue = paidInvoices.data?.reduce((s, i) => s + (i.total || 0), 0) || 0;
-    setMetrics({ revenue, unpaid: unpaidInvs.data?.length || 0, activeJobs: activeJobsRes.data?.length || 0, quotesMonth: quotesRes.data?.length || 0 });
+    const hst = paidInvoices.data?.reduce((s, i) => s + (i.hst || 0), 0) || 0;
+    setMetrics({ revenue, hst, unpaid: unpaidInvs.data?.length || 0, activeJobs: activeJobsRes.data?.length || 0, quotesMonth: quotesRes.data?.length || 0 });
     setUnpaidInvoices(unpaidInvs.data || []);
     setTodayAppts(appts.data || []);
     setRecentQuotes(recentQ.data || []);
@@ -194,18 +195,18 @@ export default function DashboardPage() {
                 ) : null;
               })()}
 
-              {/* Metrics row */}
-              <div className="dash-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e5e7eb', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden', marginBottom: '24px' }}>
+              {/* KPI cards */}
+              <div className="dash-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
                 {[
-                  { label: 'Revenue this month', value: `$${metrics.revenue.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, sub: 'collected', color: '#16a34a' },
-                  { label: 'Unpaid invoices', value: metrics.unpaid.toString(), sub: 'outstanding', color: metrics.unpaid > 0 ? '#dc2626' : '#0a0a0a' },
-                  { label: 'Active jobs', value: metrics.activeJobs.toString(), sub: 'in progress', color: '#0a0a0a' },
-                  { label: 'Quotes sent', value: metrics.quotesMonth.toString(), sub: 'this month', color: '#0a0a0a' },
+                  { label: 'Revenue', sub: 'this month', value: `$${metrics.revenue.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: '↑' },
+                  { label: 'HST Collected', sub: 'from paid invoices', value: `$${metrics.hst.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', icon: null },
+                  { label: 'Unpaid', sub: 'invoices outstanding', value: metrics.unpaid.toString(), color: metrics.unpaid > 0 ? '#dc2626' : '#6b7280', bg: metrics.unpaid > 0 ? '#fef2f2' : 'white', border: metrics.unpaid > 0 ? '#fecaca' : '#e5e7eb', icon: null },
+                  { label: 'Active Jobs', sub: 'in progress', value: metrics.activeJobs.toString(), color: '#0a0a0a', bg: 'white', border: '#e5e7eb', icon: null },
                 ].map(m => (
-                  <div key={m.label} style={{ background: 'white', padding: '20px 22px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '0 0 8px' }}>{m.label}</p>
-                    <p style={{ fontSize: '28px', fontWeight: '800', color: m.color, margin: '0 0 2px', letterSpacing: '-1px', lineHeight: 1 }}>{m.value}</p>
-                    <p style={{ fontSize: '11px', color: '#d1d5db', margin: 0 }}>{m.sub}</p>
+                  <div key={m.label} style={{ background: m.bg, border: `1px solid ${m.border}`, borderRadius: '12px', padding: '20px 22px' }}>
+                    <p style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.7px', margin: '0 0 10px' }}>{m.label}</p>
+                    <p style={{ fontSize: '36px', fontWeight: '800', color: m.color, margin: '0 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>{m.value}</p>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{m.sub}</p>
                   </div>
                 ))}
               </div>
@@ -296,12 +297,12 @@ export default function DashboardPage() {
                         { label: 'Book appointment', href: '/appointments', desc: 'Schedule with a customer' },
                         { label: 'Scan a receipt', href: '/receipts', desc: 'Capture expenses on site' },
                       ].map((action, i, arr) => (
-                        <a key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 20px', borderBottom: i < arr.length - 1 ? '1px solid #f9fafb' : 'none', textDecoration: 'none' }}>
+                        <a key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', minHeight: '56px', borderBottom: i < arr.length - 1 ? '1px solid #f9fafb' : 'none', textDecoration: 'none' }}>
                           <div>
-                            <p style={{ fontSize: '13px', fontWeight: '500', color: '#0a0a0a', margin: '0 0 1px' }}>{action.label}</p>
-                            <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{action.desc}</p>
+                            <p style={{ fontSize: '14px', fontWeight: '600', color: '#0a0a0a', margin: '0 0 2px' }}>{action.label}</p>
+                            <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{action.desc}</p>
                           </div>
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: '#d1d5db' }}><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ color: '#d1d5db', flexShrink: 0 }}><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </a>
                       ))}
                     </div>

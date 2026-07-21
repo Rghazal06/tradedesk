@@ -130,81 +130,70 @@ export default function QuotesPage() {
                 </div>
                 <p style={{ margin: '0 0 6px', fontWeight: '600', color: '#374151', fontSize: '14px' }}>No quotes yet</p>
                 <p style={{ margin: '0 0 20px', fontSize: '13px' }}>Create a quote to send to your customer</p>
-                <a href="/quotes/new" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Create your first quote</a>
+                <a href="/quotes/new" style={{ background: '#16a34a', color: 'white', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px', display: 'inline-block', minHeight: '48px' }}>Create your first quote</a>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      {['Customer', 'Total', 'Status', 'Date', 'Actions'].map(h => (
-                        <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quotes.map(quote => (
-                      <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                        <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{quote.customer_name || '—'}</td>
-                        <td style={{ padding: '14px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(quote.total)}</td>
-                        <td style={{ padding: '14px 24px' }}>
-                          <span style={{
-                            background: quote.status === 'Approved' ? '#f0fdf4' : '#f9fafb',
-                            color: quote.status === 'Approved' ? '#16a34a' : '#6b7280',
-                            border: `1px solid ${quote.status === 'Approved' ? '#bbf7d0' : '#e5e7eb'}`,
-                            borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600'
-                          }}>
-                            {quote.status || 'Draft'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 24px', color: '#6b7280', fontSize: '13px' }}>{formatDate(quote.created_at)}</td>
-                        <td style={{ padding: '14px 24px' }}>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <button
-                              onClick={() => router.push(`/quotes/${quote.id}/edit`)}
-                              style={{ padding: '6px 12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => generateQuotePDF(quoteRowToPdfData(quote))}
-                              style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                              PDF
-                            </button>
-                            <button
-                              disabled={convertingId === quote.id}
-                              onClick={() => void handleConvertToInvoice(quote)}
-                              style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: convertingId === quote.id ? 0.6 : 1 }}>
-                              {convertingId === quote.id ? 'Converting...' : '→ Invoice'}
-                            </button>
-                            <button
-                              onClick={async () => {
-                                const anyQuote = quote as any;
-                                let token = anyQuote.portal_token;
-                                if (!token) {
-                                  token = crypto.randomUUID();
-                                  await supabase.from('quotes').update({ portal_token: token }).eq('id', quote.id);
-                                }
-                                const link = `${window.location.origin}/portal?token=${token}`;
-                                await navigator.clipboard.writeText(link);
-                                setToast('Portal link copied — send it to your customer.');
-                                setTimeout(() => setToast(''), 3000);
-                              }}
-                              style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                              Portal Link
-                            </button>
-                            <button
-                              disabled={deletingId === quote.id}
-                              onClick={() => void handleDeleteQuote(quote.id)}
-                              style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === quote.id ? 0.5 : 1 }}>
-                              Delete
-                            </button>
-                          </div>
-                        </td>
+              <>
+                {/* Desktop table */}
+                <div className="q-desktop-table" style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        {['Customer', 'Total', 'Status', 'Date', 'Actions'].map(h => (
+                          <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {quotes.map(quote => (
+                        <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                          <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{quote.customer_name || '—'}</td>
+                          <td style={{ padding: '14px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(quote.total)}</td>
+                          <td style={{ padding: '14px 24px' }}>
+                            <span style={{ background: quote.status === 'Approved' ? '#f0fdf4' : '#f9fafb', color: quote.status === 'Approved' ? '#16a34a' : '#6b7280', border: `1px solid ${quote.status === 'Approved' ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600' }}>
+                              {quote.status || 'Draft'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 24px', color: '#6b7280', fontSize: '13px' }}>{formatDate(quote.created_at)}</td>
+                          <td style={{ padding: '14px 24px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
+                              <button onClick={() => router.push(`/quotes/${quote.id}/edit`)} style={{ padding: '6px 12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Edit</button>
+                              <button onClick={() => generateQuotePDF(quoteRowToPdfData(quote))} style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>PDF</button>
+                              <button disabled={convertingId === quote.id} onClick={() => void handleConvertToInvoice(quote)} style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: convertingId === quote.id ? 0.6 : 1 }}>{convertingId === quote.id ? 'Converting...' : '→ Invoice'}</button>
+                              <button onClick={async () => { const anyQuote = quote as any; let token = anyQuote.portal_token; if (!token) { token = crypto.randomUUID(); await supabase.from('quotes').update({ portal_token: token }).eq('id', quote.id); } const link = `${window.location.origin}/portal?token=${token}`; await navigator.clipboard.writeText(link); setToast('Portal link copied — send it to your customer.'); setTimeout(() => setToast(''), 3000); }} style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Portal Link</button>
+                              <button disabled={deletingId === quote.id} onClick={() => void handleDeleteQuote(quote.id)} style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === quote.id ? 0.5 : 1 }}>Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="q-mobile-cards" style={{ display: 'none', flexDirection: 'column', gap: '0' }}>
+                  {quotes.map((quote, i) => (
+                    <div key={quote.id} style={{ padding: '16px 20px', borderBottom: i < quotes.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <div>
+                          <p style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 3px' }}>{quote.customer_name || '—'}</p>
+                          <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{formatDate(quote.created_at)}</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ fontSize: '20px', fontWeight: '800', color: '#16a34a', margin: '0 0 4px', letterSpacing: '-0.5px' }}>{formatCurrency(quote.total)}</p>
+                          <span style={{ background: quote.status === 'Approved' ? '#f0fdf4' : '#f9fafb', color: quote.status === 'Approved' ? '#16a34a' : '#6b7280', border: `1px solid ${quote.status === 'Approved' ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: '100px', padding: '2px 8px', fontSize: '11px', fontWeight: '600' }}>{quote.status || 'Draft'}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <button onClick={() => router.push(`/quotes/${quote.id}/edit`)} style={{ padding: '12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px' }}>Edit</button>
+                        <button onClick={() => generateQuotePDF(quoteRowToPdfData(quote))} style={{ padding: '12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px' }}>Download PDF</button>
+                        <button disabled={convertingId === quote.id} onClick={() => void handleConvertToInvoice(quote)} style={{ padding: '12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: convertingId === quote.id ? 0.6 : 1 }}>{convertingId === quote.id ? 'Converting...' : 'Convert to Invoice'}</button>
+                        <button disabled={deletingId === quote.id} onClick={() => void handleDeleteQuote(quote.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === quote.id ? 0.5 : 1 }}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

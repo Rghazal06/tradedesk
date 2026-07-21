@@ -151,117 +151,94 @@ export default function InvoicesPage() {
                 <a href="/quotes" style={{ background: '#16a34a', color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>Go to Quotes</a>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      {['Customer', 'Total', 'Status', 'Date', 'Actions'].map(h => (
-                        <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoices.map(invoice => {
-                      const isPaid = (invoice.status || '').toLowerCase() === 'paid';
-                      return (
-                        <tr key={invoice.id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                          <td style={{ padding: '16px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{invoice.customer_name || '—'}</td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: '700' }}>{formatCurrency(invoice.total)}</span>
-                            {invoice.hst > 0 && (
-                              <span style={{ display: 'block', fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>incl. {formatCurrency(invoice.hst)} HST</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <span style={{
-                              background: isPaid ? '#f0fdf4' : '#fef2f2',
-                              color: isPaid ? '#16a34a' : '#dc2626',
-                              border: `1px solid ${isPaid ? '#bbf7d0' : '#fecaca'}`,
-                              borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600'
-                            }}>
-                              {isPaid ? 'Paid' : 'Unpaid'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '16px 24px', color: '#6b7280', fontSize: '13px' }}>{formatDate(invoice.created_at)}</td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                <button
-                                  onClick={() => router.push(`/invoices/${invoice.id}/edit`)}
-                                  style={{ padding: '6px 12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))}
-                                  style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                                  PDF
-                                </button>
-                                {!isPaid && (
-                                  <>
-                                    <button
-                                      disabled={paymentLinkLoadingId === invoice.id}
-                                      onClick={() => void handleSendPaymentLink(invoice)}
-                                      style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>
-                                      {paymentLinkLoadingId === invoice.id ? 'Creating...' : 'Payment Link'}
-                                    </button>
-                                    <button
-                                      disabled={markingPaidId === invoice.id}
-                                      onClick={() => void handleMarkPaid(invoice.id)}
-                                      style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: markingPaidId === invoice.id ? 0.6 : 1 }}>
-                                      {markingPaidId === invoice.id ? 'Updating...' : '✓ Mark Paid'}
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        const res = await fetch('/api/send-invoice-reminder', {
-                                          method: 'POST',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({
-                                            customerEmail: invoice.customer_email,
-                                            customerName: invoice.customer_name,
-                                            invoiceTotal: invoice.total?.toFixed(2),
-                                            invoiceId: invoice.id,
-                                            contractorName: 'TradeDesk Contractor',
-                                            contractorPhone: '',
-                                            paymentLink: invoice.payment_link || '',
-                                          })
-                                        });
-                                        const data = await res.json();
-                                        if (data.success) { setCopyToast('Reminder sent to ' + invoice.customer_name); setTimeout(() => setCopyToast(null), 3000); }
-                                        else setErrorMessage('Reminder failed: ' + data.error);
-                                      }}
-                                      style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                                      Remind
-                                    </button>
-                                  </>
-                                )}
-                                <button
-                                  disabled={deletingId === invoice.id}
-                                  onClick={() => void handleDeleteInvoice(invoice.id)}
-                                  style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === invoice.id ? 0.5 : 1 }}>
-                                  Delete
-                                </button>
-                              </div>
-                              {!isPaid && invoice.payment_link && (
-                                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px' }}>
-                                  <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Payment Link</p>
-                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <input readOnly value={invoice.payment_link}
-                                      style={{ flex: 1, padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', color: '#374151', background: 'white' }} />
-                                    <button onClick={() => void handleCopyPaymentLink(invoice.payment_link!)}
-                                      style={{ padding: '6px 12px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                      Copy
-                                    </button>
-                                  </div>
+              <>
+                {/* Desktop table */}
+                <div className="inv-desktop-table" style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        {['Customer', 'Total', 'Status', 'Date', 'Actions'].map(h => (
+                          <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.map(invoice => {
+                        const isPaid = (invoice.status || '').toLowerCase() === 'paid';
+                        return (
+                          <tr key={invoice.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                            <td style={{ padding: '16px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{invoice.customer_name || '—'}</td>
+                            <td style={{ padding: '16px 24px' }}>
+                              <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: '700' }}>{formatCurrency(invoice.total)}</span>
+                              {invoice.hst > 0 && <span style={{ display: 'block', fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>incl. {formatCurrency(invoice.hst)} HST</span>}
+                            </td>
+                            <td style={{ padding: '16px 24px' }}>
+                              <span style={{ background: isPaid ? '#f0fdf4' : '#fef2f2', color: isPaid ? '#16a34a' : '#dc2626', border: `1px solid ${isPaid ? '#bbf7d0' : '#fecaca'}`, borderRadius: '100px', padding: '3px 10px', fontSize: '12px', fontWeight: '600' }}>
+                                {isPaid ? 'Paid' : 'Unpaid'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 24px', color: '#6b7280', fontSize: '13px' }}>{formatDate(invoice.created_at)}</td>
+                            <td style={{ padding: '16px 24px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
+                                  <button onClick={() => router.push(`/invoices/${invoice.id}/edit`)} style={{ padding: '6px 12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Edit</button>
+                                  <button onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))} style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>PDF</button>
+                                  {!isPaid && (<>
+                                    <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Creating...' : 'Payment Link'}</button>
+                                    <button disabled={markingPaidId === invoice.id} onClick={() => void handleMarkPaid(invoice.id)} style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: markingPaidId === invoice.id ? 0.6 : 1 }}>{markingPaidId === invoice.id ? 'Updating...' : 'Mark Paid'}</button>
+                                    <button onClick={async () => { const res = await fetch('/api/send-invoice-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerEmail: invoice.customer_email, customerName: invoice.customer_name, invoiceTotal: invoice.total?.toFixed(2), invoiceId: invoice.id, contractorName: 'TradeDesk Contractor', contractorPhone: '', paymentLink: invoice.payment_link || '' }) }); const data = await res.json(); if (data.success) { setCopyToast('Reminder sent to ' + invoice.customer_name); setTimeout(() => setCopyToast(null), 3000); } else setErrorMessage('Something went wrong. Please try again.'); }} style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Remind</button>
+                                  </>)}
+                                  <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === invoice.id ? 0.5 : 1 }}>Delete</button>
                                 </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                                {!isPaid && invoice.payment_link && (
+                                  <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px' }}>
+                                    <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 6px' }}>Payment Link</p>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                      <input readOnly value={invoice.payment_link} style={{ flex: 1, padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', color: '#374151', background: 'white' }} />
+                                      <button onClick={() => void handleCopyPaymentLink(invoice.payment_link!)} style={{ padding: '6px 12px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>Copy</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="inv-mobile-cards" style={{ display: 'none', flexDirection: 'column' }}>
+                  {invoices.map((invoice, i) => {
+                    const isPaid = (invoice.status || '').toLowerCase() === 'paid';
+                    return (
+                      <div key={invoice.id} style={{ padding: '16px 20px', borderBottom: i < invoices.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                          <div>
+                            <p style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 3px' }}>{invoice.customer_name || '—'}</p>
+                            <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{formatDate(invoice.created_at)}</p>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '22px', fontWeight: '800', color: '#16a34a', margin: '0 0 4px', letterSpacing: '-0.5px' }}>{formatCurrency(invoice.total)}</p>
+                            <span style={{ background: isPaid ? '#f0fdf4' : '#fef2f2', color: isPaid ? '#16a34a' : '#dc2626', border: `1px solid ${isPaid ? '#bbf7d0' : '#fecaca'}`, borderRadius: '100px', padding: '2px 10px', fontSize: '12px', fontWeight: '700' }}>{isPaid ? 'Paid' : 'Unpaid'}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <button onClick={() => router.push(`/invoices/${invoice.id}/edit`)} style={{ padding: '12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px' }}>Edit</button>
+                          <button onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))} style={{ padding: '12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px' }}>Download PDF</button>
+                          {!isPaid && <>
+                            <button disabled={markingPaidId === invoice.id} onClick={() => void handleMarkPaid(invoice.id)} style={{ padding: '12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', minHeight: '52px', opacity: markingPaidId === invoice.id ? 0.6 : 1, gridColumn: 'span 2' }}>{markingPaidId === invoice.id ? 'Updating...' : 'Mark as Paid'}</button>
+                            <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Creating...' : 'Payment Link'}</button>
+                            <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === invoice.id ? 0.5 : 1 }}>Delete</button>
+                          </>}
+                          {isPaid && <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === invoice.id ? 0.5 : 1, gridColumn: 'span 2' }}>Delete</button>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </div>
