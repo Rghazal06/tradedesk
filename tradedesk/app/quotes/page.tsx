@@ -40,7 +40,7 @@ export default function QuotesPage() {
         .select("id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, portal_token")
         .eq("user_id", authData.user.id)
         .order("created_at", { ascending: false });
-      if (error) { setErrorMessage(error.message); setLoading(false); return; }
+      if (error) { setErrorMessage('Could not load quotes. Please refresh.'); setLoading(false); return; }
       setQuotes(data ?? []);
       setLoading(false);
     };
@@ -77,7 +77,7 @@ export default function QuotesPage() {
       status: "unpaid",
     });
     setConvertingId(null);
-    if (error) { setErrorMessage(error.message); return; }
+    if (error) { setErrorMessage('Something went wrong. Please try again.'); return; }
     router.push("/invoices");
   };
 

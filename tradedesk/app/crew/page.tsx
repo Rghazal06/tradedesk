@@ -125,7 +125,7 @@ export default function CrewPage() {
     }
 
     if (error) {
-      setMessage('Error: ' + error.message);
+      setMessage('Something went wrong. Please try again.');
     } else {
       setMessage(editingId ? 'Crew member updated.' : 'Crew member added.');
       setShowForm(false);

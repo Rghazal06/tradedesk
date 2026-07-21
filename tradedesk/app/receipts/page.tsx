@@ -324,7 +324,7 @@ export default function ReceiptsPage() {
     };
     const { error } = await supabase.from('receipts').update(payload).eq('id', viewReceipt.id);
     if (error) {
-      setMessage({ text: 'Error saving: ' + error.message, type: 'error' });
+      setMessage({ text: 'Something went wrong. Please try again.', type: 'error' });
     } else {
       const updated: Receipt = { ...viewReceipt, ...payload, image_url: newImageUrl };
       setViewReceipt(updated);
@@ -358,7 +358,7 @@ export default function ReceiptsPage() {
       job_id: form.job_id || null,
     });
     if (error) {
-      setMessage({ text: 'Error saving: ' + error.message, type: 'error' });
+      setMessage({ text: 'Something went wrong. Please try again.', type: 'error' });
     } else {
       setMessage({ text: 'Receipt saved!', type: 'success' });
       setShowForm(false);
@@ -875,8 +875,8 @@ export default function ReceiptsPage() {
                       />
                       <div style={{ display: 'none', width: '100%', background: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
                         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 8v5M11 15h.01" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round"/><circle cx="11" cy="11" r="9" stroke="#b45309" strokeWidth="1.8"/></svg>
-                        <p style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', margin: 0 }}>Image not loading</p>
-                        <p style={{ fontSize: '11px', color: '#92400e', margin: 0 }}>Make the receipts bucket public in Supabase Storage</p>
+                        <p style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', margin: 0 }}>Photo unavailable</p>
+                        <p style={{ fontSize: '11px', color: '#92400e', margin: 0 }}>Try re-uploading the photo in edit mode</p>
                       </div>
                       <a href={viewReceipt.image_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         Open full size

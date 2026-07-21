@@ -47,7 +47,7 @@ export default function InvoicesPage() {
       .select("id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, payment_link")
       .eq("user_id", authData.user.id)
       .order("created_at", { ascending: false });
-    if (error) { setErrorMessage(error.message); setLoading(false); return; }
+    if (error) { setErrorMessage('Could not load invoices. Please refresh.'); setLoading(false); return; }
     setInvoices((data ?? []) as InvoiceRow[]);
     setLoading(false);
   }, []);

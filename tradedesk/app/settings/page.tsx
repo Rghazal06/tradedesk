@@ -95,7 +95,7 @@ function SettingsContent() {
       booking_notice_hours: profile.booking_notice_hours,
       booking_slot_minutes: profile.booking_slot_minutes,
     });
-    if (error) setMessage('Error saving: ' + error.message);
+    if (error) setMessage('Something went wrong. Please try again.');
     else setMessage('Settings saved successfully!');
     setSaving(false);
     setTimeout(() => setMessage(''), 3000);

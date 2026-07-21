@@ -90,7 +90,7 @@ export default function WSIBPage() {
       premium_owing: parseFloat(premiumOwing),
       status: 'pending',
     });
-    if (error) { setMessage('Error: ' + error.message); }
+    if (error) { setMessage('Something went wrong. Please try again.'); }
     else {
       setMessage('WSIB entry saved!');
       setForm({ period_start: '', period_end: '', reportable_earnings: '', wsib_rate: '1.69', due_date: '', notes: '' });

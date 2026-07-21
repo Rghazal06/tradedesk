@@ -127,7 +127,7 @@ export default function PricebookPage() {
     }
 
     if (error) {
-      setMessage({ text: 'Error saving: ' + error.message, type: 'error' });
+      setMessage({ text: 'Something went wrong. Please try again.', type: 'error' });
     } else {
       setMessage({ text: editingItem ? 'Item updated!' : 'Item added to pricebook!', type: 'success' });
       closeForm();

@@ -37,7 +37,7 @@ function LoginForm() {
       } else if (error.message.toLowerCase().includes('invalid login credentials') || error.message.toLowerCase().includes('invalid credentials')) {
         setErrorMessage("Incorrect email or password. Please try again.");
       } else {
-        setErrorMessage(error.message);
+        setErrorMessage("Something went wrong. Please try again.");
       }
       setIsLoading(false);
       return;

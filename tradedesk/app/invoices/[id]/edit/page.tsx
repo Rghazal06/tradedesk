@@ -180,7 +180,7 @@ export default function EditInvoicePage(): React.JSX.Element {
       .eq('id', invoiceId)
       .eq('user_id', user.id);
 
-    if (error) { setErrorMessage(error.message); setIsSaving(false); return; }
+    if (error) { setErrorMessage('Something went wrong. Please try again.'); setIsSaving(false); return; }
     setSuccessMessage("Changes saved! Redirecting...");
     setIsSaving(false);
     setTimeout(() => router.push("/invoices"), 800);

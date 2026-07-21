@@ -139,7 +139,7 @@ export default function NewQuotePage() {
     if (authError || !user) { setIsSaving(false); router.push("/login"); return; }
     const normalizedLineItems = lineItems.map(item => ({ description: item.description, quantity: toNumber(item.quantity), unit_price: toNumber(item.unitPrice), total: lineItemTotal(item) }));
     const { error } = await supabase.from("quotes").insert({ user_id: user.id, customer_name: customerName, customer_email: customerEmail, customer_phone: customerPhone, job_description: jobDescription, line_items: normalizedLineItems, subtotal, hst, total, notes: quoteNotes, status: "Draft" });
-    if (error) { setErrorMessage(error.message); setIsSaving(false); return; }
+    if (error) { setErrorMessage('Something went wrong. Please try again.'); setIsSaving(false); return; }
     setSuccessMessage("Quote saved! Redirecting...");
     setIsSaving(false);
     setTimeout(() => router.push("/quotes"), 800);

@@ -104,7 +104,7 @@ export default function ApprenticeshipPage() {
       task_description: form.task_description,
     });
     if (error) {
-      setMessage('Error: ' + error.message);
+      setMessage('Something went wrong. Please try again.');
     } else {
       setMessage('Hours logged!');
       setForm({ work_date: new Date().toISOString().split('T')[0], hours: '', trade_category: tradeType || '', employer_name: '', supervisor_name: '', task_description: '' });

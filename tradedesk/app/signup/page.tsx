@@ -51,7 +51,7 @@ function SignupForm() {
       if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already been registered')) {
         setErrorMessage("An account with this email already exists. Try signing in instead.");
       } else {
-        setErrorMessage(error.message);
+        setErrorMessage("Something went wrong. Please try again.");
       }
       setIsLoading(false);
       return;
@@ -68,7 +68,7 @@ function SignupForm() {
       referral_code: referralCode,
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     });
-    if (profileError) { setErrorMessage(profileError.message); setIsLoading(false); return; }
+    if (profileError) { setErrorMessage('Something went wrong creating your account. Please try again.'); setIsLoading(false); return; }
 
     // Apply referral code if present
     if (refCode) {

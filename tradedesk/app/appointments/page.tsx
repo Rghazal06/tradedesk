@@ -79,7 +79,7 @@ export default function AppointmentsPage() {
       status: 'pending',
     });
     if (error) {
-      setMessage('Error: ' + error.message);
+      setMessage('Something went wrong. Please try again.');
     } else {
       setMessage('Appointment booked!');
       setShowForm(false);
