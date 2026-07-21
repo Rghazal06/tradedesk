@@ -44,21 +44,33 @@ const money = (value: number) =>
     currency: "CAD",
   });
 
-/** Normalize line_items from Supabase JSON (snake_case or camelCase). */
+/** Normalize line_items from Supabase JSON (snake_case or camelCase).
+ *  Handles: JSONB array, JSON string, single object, or null/undefined. */
 export function parseLineItemsFromDb(raw: unknown): QuoteLineItemPdf[] {
+  // If stored as a JSON string (e.g. manually imported via XML/SQL), parse it first
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw); } catch { return []; }
+  }
+  // Wrap a single object in an array
+  if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+    raw = [raw];
+  }
   if (!Array.isArray(raw)) return [];
-  return raw.map((row) => {
-    const r = row as Record<string, unknown>;
-    const qty = Number(r.quantity) || 0;
-    const unit = Number(r.unit_price ?? r.unitPrice) || 0;
-    const lineTotal = Number(r.total);
-    return {
-      description: String(r.description ?? ""),
-      quantity: qty,
-      unit_price: unit,
-      total: Number.isFinite(lineTotal) ? lineTotal : qty * unit,
-    };
-  });
+  return raw
+    .filter((row) => row !== null && typeof row === 'object')
+    .map((row) => {
+      const r = row as Record<string, unknown>;
+      const qty = Number(r.quantity ?? r.qty ?? 1) || 0;
+      // Accept unit_price, unitPrice, price, rate, unit_cost
+      const unit = Number(r.unit_price ?? r.unitPrice ?? r.price ?? r.rate ?? r.unit_cost ?? 0) || 0;
+      const lineTotal = Number(r.total ?? r.line_total ?? r.lineTotal ?? r.amount);
+      return {
+        description: String(r.description ?? r.name ?? r.item ?? ""),
+        quantity: qty,
+        unit_price: unit,
+        total: Number.isFinite(lineTotal) ? lineTotal : qty * unit,
+      };
+    });
 }
 
 /** Map a full quotes row from Supabase into QuotePdfData. */
