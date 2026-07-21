@@ -160,48 +160,35 @@ export default function ReceiptsPage() {
     setScanning(true);
     setMessage(null);
     try {
-      // Upload to storage first
-      const filename = `${userId}/${Date.now()}.jpg`;
-      const byteString = atob(imageBase64);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-      const blob = new Blob([ab], { type: imageMime });
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('receipts')
-        .upload(filename, blob, { contentType: imageMime, upsert: true });
-      if (uploadData) {
-        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(filename);
-        setUploadedImageUrl(urlData?.publicUrl || '');
-      } else {
-        const msg = uploadError?.message ?? 'unknown error';
-        setMessage({ text: `Photo upload failed: ${msg}. Make sure the "receipts" bucket exists in Supabase Storage and is set to public. The receipt will still be saved without a photo.`, type: 'error' });
-      }
-
-      // Scan
+      // Scan + upload happen server-side (avoids storage RLS issues)
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/scan-receipt', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ imageBase64, mimeType: imageMime }),
       });
-      const result = await res.json();
+      const result = await res.json() as { success?: boolean; data?: Record<string, unknown>; imageUrl?: string; error?: string };
       if (result.success && result.data) {
         const d = result.data;
+        if (result.imageUrl) setUploadedImageUrl(result.imageUrl);
         setForm({
-          merchant: d.merchant || '',
-          amount: d.amount?.toString() || '',
-          subtotal: d.subtotal?.toString() || '',
-          tax: d.tax?.toString() || '',
-          date: d.date || new Date().toISOString().split('T')[0],
-          category: d.category || 'Other',
+          merchant: typeof d.merchant === 'string' ? d.merchant : '',
+          amount: d.amount != null ? String(d.amount) : '',
+          subtotal: d.subtotal != null ? String(d.subtotal) : '',
+          tax: d.tax != null ? String(d.tax) : '',
+          date: typeof d.date === 'string' && d.date ? d.date : new Date().toISOString().split('T')[0],
+          category: typeof d.category === 'string' ? d.category : 'Other',
           notes: '',
           job_id: '',
         });
-        setScannedLineItems(d.line_items || []);
-        setMessage({ text: `Scanned ${(d.line_items || []).length} line item${(d.line_items || []).length !== 1 ? 's' : ''}. Review and save.`, type: 'success' });
+        const lineItems = Array.isArray(d.line_items) ? d.line_items as LineItem[] : [];
+        setScannedLineItems(lineItems);
+        setMessage({ text: `Scanned ${lineItems.length} line item${lineItems.length !== 1 ? 's' : ''}. Review and save.`, type: 'success' });
       } else {
-        setMessage({ text: 'Could not read receipt — fill in manually.', type: 'error' });
+        setMessage({ text: result.error || 'Could not read receipt — fill in manually.', type: 'error' });
       }
     } catch {
       setMessage({ text: 'Scan failed. Fill in manually.', type: 'error' });
@@ -291,25 +278,31 @@ export default function ReceiptsPage() {
     }
     setEditSaving(true);
 
-    // Upload new photo if one was selected
+    // Upload new photo via server-side API (bypasses storage RLS)
     let newImageUrl: string = viewReceipt.image_url || '';
     if (editPhotoBase64) {
       setEditPhotoUploading(true);
-      const filename = `${userId}/${Date.now()}.jpg`;
-      const byteString = atob(editPhotoBase64);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-      const blob = new Blob([ab], { type: editPhotoMime });
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('receipts')
-        .upload(filename, blob, { contentType: editPhotoMime, upsert: true });
-      if (uploadData) {
-        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(filename);
-        newImageUrl = urlData?.publicUrl || newImageUrl;
-      } else {
-        const msg = uploadError?.message ?? 'unknown error';
-        setMessage({ text: `Photo upload failed: ${msg}. Make sure the "receipts" bucket exists in Supabase Storage and is set to public.`, type: 'error' });
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uploadRes = await fetch('/api/upload-receipt-photo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ imageBase64: editPhotoBase64, mimeType: editPhotoMime }),
+        });
+        const uploadResult = await uploadRes.json() as { success?: boolean; imageUrl?: string; error?: string };
+        if (uploadResult.success && uploadResult.imageUrl) {
+          newImageUrl = uploadResult.imageUrl;
+        } else {
+          setMessage({ text: `Photo upload failed: ${uploadResult.error ?? 'unknown error'}`, type: 'error' });
+          setEditSaving(false);
+          setEditPhotoUploading(false);
+          return;
+        }
+      } catch {
+        setMessage({ text: 'Photo upload failed. Please try again.', type: 'error' });
         setEditSaving(false);
         setEditPhotoUploading(false);
         return;
@@ -549,36 +542,92 @@ export default function ReceiptsPage() {
                     )}
                   </div>
 
-                  {/* Line items breakdown */}
-                  {scannedLineItems.length > 0 && (
-                    <div style={{ marginTop: '20px', borderTop: '1px solid #f3f4f6', paddingTop: '16px' }}>
-                      <p style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.6px', margin: '0 0 10px' }}>
-                        Items Detected ({scannedLineItems.length})
+                  {/* Editable line items */}
+                  <div style={{ marginTop: '20px', borderTop: '1px solid #f3f4f6', paddingTop: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.6px', margin: 0 }}>
+                        Line Items {scannedLineItems.length > 0 && `(${scannedLineItems.length})`}
                       </p>
+                      <button
+                        onClick={() => setScannedLineItems(prev => [...prev, { description: '', qty: 1, unit_price: null, amount: 0 }])}
+                        style={{ padding: '4px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                        + Add line
+                      </button>
+                    </div>
+                    {scannedLineItems.length === 0 ? (
+                      <div style={{ background: '#f9fafb', border: '1px dashed #e5e7eb', borderRadius: '8px', padding: '14px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>
+                        No line items — click &quot;+ Add line&quot; or scan to auto-detect
+                      </div>
+                    ) : (
                       <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                           <thead>
                             <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                              <th style={{ padding: '8px 12px', textAlign: 'left', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Description</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'center', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', width: '50px' }}>Qty</th>
-                              <th style={{ padding: '8px 10px', textAlign: 'right', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', width: '80px' }}>Unit</th>
-                              <th style={{ padding: '8px 12px', textAlign: 'right', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', width: '80px' }}>Amount</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'left', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase' as const }}>Description</th>
+                              <th style={{ padding: '8px 8px', textAlign: 'center', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase' as const, width: '55px' }}>Qty</th>
+                              <th style={{ padding: '8px 8px', textAlign: 'right', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase' as const, width: '80px' }}>Unit $</th>
+                              <th style={{ padding: '8px 10px', textAlign: 'right', color: '#6b7280', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase' as const, width: '75px' }}>Amount</th>
+                              <th style={{ width: '32px' }}></th>
                             </tr>
                           </thead>
                           <tbody>
                             {scannedLineItems.map((item, i) => (
                               <tr key={i} style={{ borderBottom: i < scannedLineItems.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                                <td style={{ padding: '9px 12px', color: '#111', fontWeight: '500' }}>{item.description}</td>
-                                <td style={{ padding: '9px 10px', textAlign: 'center', color: '#6b7280' }}>{item.qty ?? '—'}</td>
-                                <td style={{ padding: '9px 10px', textAlign: 'right', color: '#6b7280' }}>{item.unit_price != null ? fmt(item.unit_price) : '—'}</td>
-                                <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111', fontWeight: '600' }}>{fmt(item.amount)}</td>
+                                <td style={{ padding: '5px 8px' }}>
+                                  <input
+                                    value={item.description}
+                                    onChange={e => setScannedLineItems(prev => prev.map((li, idx) => idx === i ? { ...li, description: e.target.value } : li))}
+                                    placeholder="Item description"
+                                    style={{ ...inputStyle, padding: '6px 8px', fontSize: '13px' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '5px 6px' }}>
+                                  <input
+                                    type="number" step="1" min="0"
+                                    value={item.qty ?? ''}
+                                    onChange={e => {
+                                      const qty = e.target.value === '' ? null : parseFloat(e.target.value);
+                                      setScannedLineItems(prev => prev.map((li, idx) => {
+                                        if (idx !== i) return li;
+                                        const up = li.unit_price;
+                                        return { ...li, qty, amount: qty != null && up != null ? parseFloat((qty * up).toFixed(2)) : li.amount };
+                                      }));
+                                    }}
+                                    placeholder="1"
+                                    style={{ ...inputStyle, padding: '6px 6px', fontSize: '13px', textAlign: 'center' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '5px 6px' }}>
+                                  <input
+                                    type="number" step="0.01" min="0"
+                                    value={item.unit_price ?? ''}
+                                    onChange={e => {
+                                      const up = e.target.value === '' ? null : parseFloat(e.target.value);
+                                      setScannedLineItems(prev => prev.map((li, idx) => {
+                                        if (idx !== i) return li;
+                                        const qty = li.qty;
+                                        return { ...li, unit_price: up, amount: qty != null && up != null ? parseFloat((qty * up).toFixed(2)) : li.amount };
+                                      }));
+                                    }}
+                                    placeholder="0.00"
+                                    style={{ ...inputStyle, padding: '6px 6px', fontSize: '13px', textAlign: 'right' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '5px 8px', textAlign: 'right', color: '#111', fontWeight: '700', whiteSpace: 'nowrap' as const }}>{fmt(item.amount)}</td>
+                                <td style={{ padding: '5px 6px', textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => setScannedLineItems(prev => prev.filter((_, idx) => idx !== i))}
+                                    style={{ background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '4px', width: '24px', height: '24px', cursor: 'pointer', fontSize: '14px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>
+                                    ×
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                     <button onClick={saveReceipt} disabled={saving} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { createClient } from '@supabase/supabase-js';
 import { rateLimit } from '../../../lib/rateLimit';
 import { getAuthUser } from '../../../lib/apiAuth';
 
@@ -89,7 +90,32 @@ Rules:
     }
 
     const extracted = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ success: true, data: extracted });
+
+    // Upload image server-side (bypasses storage RLS)
+    let imageUrl: string | null = null;
+    try {
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const filename = `${user.id}/${Date.now()}.jpg`;
+      const byteString = atob(imageBase64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+      const blob = new Blob([ab], { type: mimeType });
+      const { data: uploadData } = await supabaseAdmin.storage
+        .from('receipts')
+        .upload(filename, blob, { contentType: mimeType, upsert: true });
+      if (uploadData) {
+        const { data: urlData } = supabaseAdmin.storage.from('receipts').getPublicUrl(filename);
+        imageUrl = urlData?.publicUrl ?? null;
+      }
+    } catch {
+      // Non-fatal — receipt saves without photo
+    }
+
+    return NextResponse.json({ success: true, data: extracted, imageUrl });
   } catch (error) {
     console.error('scan-receipt error:', error);
     return NextResponse.json({ error: 'Receipt scan failed. Please try again.' }, { status: 500 });
