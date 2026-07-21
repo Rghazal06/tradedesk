@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [certExpiry, setCertExpiry] = useState<string | null>(null);
   const [onboardingSteps, setOnboardingSteps] = useState<string[]>([]);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const TOTAL_STEPS = 9;
+  const TOTAL_STEPS = 17;
 
   useEffect(() => { load(); }, []);
 

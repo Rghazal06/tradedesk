@@ -120,14 +120,15 @@ export default function NewQuotePage() {
     setIsGenerating(true); setErrorMessage('');
     try {
       const res = await fetch('/api/ai-quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobDescription, tradeType }) });
-      const data = await res.json();
-      if (data.error) { setErrorMessage(data.error); return; }
+      let data: any = {};
+      try { data = await res.json(); } catch { setErrorMessage(`Server error (${res.status}). Ensure OPENAI_API_KEY is set in Vercel environment variables.`); return; }
+      if (!res.ok || data.error) { setErrorMessage(data.error || `Error ${res.status}`); return; }
       if (data.line_items) {
         setLineItems(data.line_items.map((item: any, index: number) => ({ id: Date.now() + index, description: item.description, quantity: String(item.quantity), unitPrice: String(item.unit_price) })));
       }
       if (data.notes) setQuoteNotes(data.notes);
       setSuccessMessage('AI generated your quote! Review and adjust before sending.');
-    } catch { setErrorMessage('AI generation failed. Please try again.'); }
+    } catch { setErrorMessage('Network error. Could not reach the server.'); }
     finally { setIsGenerating(false); }
   };
 

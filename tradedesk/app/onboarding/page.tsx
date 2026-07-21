@@ -23,7 +23,7 @@ const STEPS = [
     tips: [
       'Your trade type helps AI generate more accurate, realistic quotes',
       'Add your company name so clients recognize every document you send',
-      'You can add a logo URL to appear on quotes and invoices',
+      'You can add a logo URL to have it appear on quotes and invoices',
     ],
     cta: 'Open settings',
     href: '/settings',
@@ -59,17 +59,40 @@ const STEPS = [
     ),
   },
   {
+    id: 'pricebook',
+    title: 'Build your pricebook',
+    time: '5 min',
+    color: '#b45309',
+    bg: '#fefce8',
+    border: '#fde68a',
+    description: 'Add your standard flat-rate prices for common jobs and materials. When AI generates a quote, it pulls from your pricebook automatically — so your prices stay consistent across every job.',
+    tips: [
+      'Add your most common services first — panel upgrades, service calls, etc.',
+      'Pricebook items auto-populate when AI generates quotes',
+      'Include both labour and material rates for accurate quotes',
+    ],
+    cta: 'Open pricebook',
+    href: '/pricebook',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="4" width="24" height="24" rx="3" stroke={c} strokeWidth="2.2"/>
+        <path d="M10 11h12M10 16h8" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+        <path d="M17 21l2.5 2.5L24 19" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
     id: 'wsib',
     title: 'Set up WSIB tracking',
     time: '2 min',
     color: '#dc2626',
     bg: '#fef2f2',
     border: '#fecaca',
-    description: 'Enter your WSIB premium rate once. TradeDesk auto-calculates what you owe each period based on your logged earnings, and emails you 3 days before every filing deadline — no more missed payments.',
+    description: 'Enter your WSIB premium rate once. TradeDesk auto-calculates what you owe each period based on your logged earnings, and emails you 3 days before every filing deadline — no more missed payments or penalties.',
     tips: [
       'Find your rate class on the WSIB Ontario website under "Premium rates"',
       'Log your gross reportable earnings after every client payment',
-      'Mark entries as paid once you file to keep your balance clean',
+      'Mark entries as paid after you file to keep your balance current',
     ],
     cta: 'Set up WSIB',
     href: '/wsib',
@@ -87,7 +110,7 @@ const STEPS = [
     color: '#7c3aed',
     bg: '#f5f3ff',
     border: '#ddd6fe',
-    description: 'Convert any approved quote to an invoice in one click. Connect Stripe once and every invoice automatically gets a Stripe payment link — customers pay by Visa, Mastercard, or bank transfer the day they receive it.',
+    description: 'Convert any approved quote to an invoice in one click. Connect Stripe once and every invoice automatically gets a payment link — customers pay by Visa, Mastercard, or bank transfer the same day they receive it.',
     tips: [
       'Connect Stripe under Settings → Subscription to enable payment links',
       'HST is already calculated and shown as a separate line on every invoice',
@@ -109,11 +132,11 @@ const STEPS = [
     color: '#0369a1',
     bg: '#f0f9ff',
     border: '#bae6fd',
-    description: "Build your client CRM as you work. Every client stores their full history — quotes sent, invoices paid, jobs completed, and all contact info — so you always know exactly where things stand.",
+    description: "Build your client CRM as you work. Every client stores their full history — quotes sent, invoices paid, jobs completed, and all contact info — so you always know exactly where things stand with each customer.",
     tips: [
       'Clients are automatically created when you use their name on a quote',
-      'Add notes to remember how you met or any special instructions',
-      'See every quote, invoice, and job for a client in one place',
+      'Add notes to remember how you met or any special job instructions',
+      'Filter clients by trade type or location for targeted follow-ups',
     ],
     cta: 'Add a client',
     href: '/clients',
@@ -133,9 +156,9 @@ const STEPS = [
     color: '#b45309',
     bg: '#fefce8',
     border: '#fde68a',
-    description: 'Create a job, assign it to a client, set the date and time, and track its status from scheduled to in-progress to complete. Attach before and after photos from the job site and generate a professional PDF report.',
+    description: 'Create a job, assign it to a client, set the date and time, and track its status from scheduled to in-progress to complete. Attach before and after photos from the job site and generate a professional PDF report when done.',
     tips: [
-      'Use the Report button to generate a detailed job summary for your records',
+      'Use the Report button to generate a detailed job summary PDF for your records',
       'Attach photos directly from your phone while on site',
       'Marking a job complete can trigger an automatic Google review request',
     ],
@@ -149,6 +172,30 @@ const STEPS = [
     ),
   },
   {
+    id: 'appointments',
+    title: 'Book your first appointment',
+    time: '2 min',
+    color: '#0891b2',
+    bg: '#ecfeff',
+    border: '#a5f3fc',
+    description: 'Schedule customer appointments with date, time, and job type. TradeDesk sends automatic SMS reminders to customers the day before so they never forget — and you never show up to a no-show.',
+    tips: [
+      'SMS reminders go out automatically the day before each appointment',
+      'Add customer phone number to make sure reminders get sent',
+      'View all appointments in your calendar to plan your week',
+    ],
+    cta: 'Book an appointment',
+    href: '/appointments',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect x="3" y="6" width="26" height="22" rx="3" stroke={c} strokeWidth="2.2"/>
+        <path d="M3 13h26" stroke={c} strokeWidth="2"/>
+        <path d="M9 3v6M23 3v6" stroke={c} strokeWidth="2.2" strokeLinecap="round"/>
+        <path d="M10 21l3.5 3.5L22 18" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
     id: 'receipts',
     title: 'Scan your first receipt',
     time: '2 min',
@@ -157,7 +204,7 @@ const STEPS = [
     border: '#bbf7d0',
     description: 'Photograph any receipt from the job site — Home Depot, Rona, tool suppliers, fuel. AI automatically extracts every line item, amount, and vendor. Attach receipts to jobs to track actual costs vs. what you quoted.',
     tips: [
-      'Take the photo in good lighting — good contrast helps AI extraction accuracy',
+      'Take the photo in good lighting — contrast helps AI extraction accuracy',
       'Attach receipts to jobs to see your real cost margin vs. quoted amount',
       'All receipts are automatically categorized for tax time',
     ],
@@ -173,13 +220,148 @@ const STEPS = [
     ),
   },
   {
+    id: 'crew',
+    title: 'Add your crew and subcontractors',
+    time: '3 min',
+    color: '#0369a1',
+    bg: '#f0f9ff',
+    border: '#bae6fd',
+    description: 'Add your subcontractors and crew members with their trade, WSIB number, and certificate expiry dates. TradeDesk warns you before anyone\'s certificate lapses — because hiring a sub with an expired cert makes you liable.',
+    tips: [
+      'Add everyone you regularly work with so WSIB tracking is automatic',
+      'You\'ll get a warning banner 30 days before any certificate expires',
+      'Track each crew member\'s WSIB rate class for accurate compliance',
+    ],
+    cta: 'Add crew members',
+    href: '/crew',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <circle cx="10" cy="10" r="4.5" stroke={c} strokeWidth="2.2"/>
+        <circle cx="22" cy="10" r="4.5" stroke={c} strokeWidth="2.2"/>
+        <path d="M2 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke={c} strokeWidth="2.2" strokeLinecap="round"/>
+        <path d="M19 22c1-1.8 3-3 5-3 2.8 0 5 2 5 5" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'insurance',
+    title: 'Track your insurance (COI)',
+    time: '2 min',
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    border: '#ddd6fe',
+    description: 'Add your Certificate of Insurance, general liability, and any other policies. TradeDesk tracks expiry dates and alerts you before any coverage lapses — so you\'re never caught working without valid insurance.',
+    tips: [
+      'Upload your COI document so you have a copy ready to send clients',
+      'Many commercial clients require proof of insurance before work starts',
+      'Set a reminder 60 days before expiry to give yourself time to renew',
+    ],
+    cta: 'Add insurance',
+    href: '/insurance',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M4 4h24v24H4z" rx="2" stroke={c} strokeWidth="2.2"/>
+        <rect x="4" y="4" width="24" height="24" rx="2" stroke={c} strokeWidth="2.2"/>
+        <path d="M10 13l3 3 9-9" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M10 20h12" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'assistant',
+    title: 'Try the AI assistant',
+    time: '2 min',
+    color: '#8b5cf6',
+    bg: '#f5f3ff',
+    border: '#ddd6fe',
+    description: 'The AI assistant has access to your actual business data — your quotes, invoices, jobs, and revenue. Ask it anything about your business in plain English and get real, data-backed answers instantly.',
+    tips: [
+      'Try: "What were my top 5 jobs last month?" or "Which invoices are unpaid?"',
+      'Ask: "How much HST did I collect this quarter?" for instant tax prep',
+      'The more data you add to TradeDesk, the smarter the answers get',
+    ],
+    cta: 'Open AI assistant',
+    href: '/assistant',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M16 3l2 9.5L27 16l-9 2.5L16 28l-2-9.5L5 16l9-2.5z" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'profit',
+    title: 'Analyze your profits',
+    time: '2 min',
+    color: '#16a34a',
+    bg: '#f0fdf4',
+    border: '#bbf7d0',
+    description: 'The Profit Analyzer pulls your quotes, invoices, and job costs together and shows you exactly where your money is going. See your top revenue sources, average job value, collection rate, and where you\'re leaving money on the table.',
+    tips: [
+      'Run the analyzer monthly to catch declining margins early',
+      'Compare your quote-to-win rate to see how often customers accept',
+      'Attach receipts to jobs first so cost data is accurate',
+    ],
+    cta: 'Open profit analyzer',
+    href: '/profit',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <polyline points="4,26 10,18 15,21 22,12 28,6" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <polyline points="23,6 28,6 28,11" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'leads',
+    title: 'Set up the AI missed-call handler',
+    time: '3 min',
+    color: '#dc2626',
+    bg: '#fef2f2',
+    border: '#fecaca',
+    description: 'When a customer calls and you\'re on the job, TradeDesk\'s AI texts them back automatically: "Hi, I\'m on a job right now — what can I help you with?" It captures their name, job type, and address, and creates a lead in your inbox.',
+    tips: [
+      'Requires a Twilio phone number — set it up in Settings → SMS Leads',
+      'You review and respond to every AI-captured lead from the Leads inbox',
+      'Never lose a customer because you couldn\'t pick up on the job',
+    ],
+    cta: 'Set up SMS leads',
+    href: '/leads',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M27 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6l3 4 3-4h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/>
+        <path d="M9 11h14M9 15h9" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'apprenticeship',
+    title: 'Log apprenticeship hours',
+    time: '2 min',
+    color: '#0369a1',
+    bg: '#f0f9ff',
+    border: '#bae6fd',
+    description: 'Track your hours toward your Red Seal or Certificate of Qualification under Skilled Trades Ontario. Log hours by employer, supervisor, and task type — and export a clean record at any time for submission.',
+    tips: [
+      'Log hours right after each shift so nothing gets missed',
+      'Include supervisor name and employer for each entry as required by STO',
+      'Export a full log at any time for submission to Skilled Trades Ontario',
+    ],
+    cta: 'Log hours',
+    href: '/apprenticeship',
+    icon: (c: string) => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <polygon points="16,4 28,10 16,16 4,10" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/>
+        <path d="M8 14v7c0 0 3 4 8 4s8-4 8-4v-7" stroke={c} strokeWidth="2.2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
     id: 'booking',
     title: 'Enable online booking',
     time: '2 min',
     color: '#0891b2',
     bg: '#ecfeff',
     border: '#a5f3fc',
-    description: "Turn on your public booking page so customers can book appointments without calling. You set your working hours, available days, and slot duration — they pick a time that works. Bookings land in your calendar automatically.",
+    description: "Turn on your public booking page so customers can book appointments without calling. You set working hours, available days, and slot duration — they pick a time that works. All bookings land in your Appointments calendar automatically.",
     tips: [
       'Set a minimum notice time (24–48 hours) to avoid same-day surprises',
       'Your booking link is tradedesk.ca/book/your-slug — share it anywhere',
@@ -189,10 +371,9 @@ const STEPS = [
     href: '/settings',
     icon: (c: string) => (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect x="3" y="6" width="26" height="22" rx="3" stroke={c} strokeWidth="2.2"/>
-        <path d="M3 13h26" stroke={c} strokeWidth="2"/>
-        <path d="M9 3v6M23 3v6" stroke={c} strokeWidth="2.2" strokeLinecap="round"/>
-        <path d="M10 21l3.5 3.5L22 18" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="16" cy="16" r="12" stroke={c} strokeWidth="2.2"/>
+        <path d="M16 9v7l4 4" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M4 16h3M25 16h3M16 4v3M16 25v3" stroke={c} strokeWidth="2" strokeLinecap="round"/>
       </svg>
     ),
   },
@@ -203,11 +384,11 @@ const STEPS = [
     color: '#16a34a',
     bg: '#f0fdf4',
     border: '#bbf7d0',
-    description: 'Enable your public contractor profile and share the link anywhere — Instagram, Facebook, Google, your website. Customers can see your trade, services, and send you quote requests directly.',
+    description: 'Enable your public contractor profile and share the link anywhere — Instagram, Facebook, Google, your website. Customers can see your trade, services, and send you quote requests directly from your profile page.',
     tips: [
       'Share your profile link in your Instagram bio and Google Business listing',
       'Quote requests from your profile appear directly in your Quotes inbox',
-      'Enable online booking on your profile so customers can self-book instantly',
+      'Enable online booking so customers can self-book from your profile',
     ],
     cta: 'Enable public profile',
     href: '/settings',
@@ -222,6 +403,8 @@ const STEPS = [
     ),
   },
 ];
+
+export const ONBOARDING_TOTAL = STEPS.length;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -247,7 +430,6 @@ export default function OnboardingPage() {
     const done = new Set<string>(profile?.onboarding_steps || []);
     setCompletedSteps(done);
 
-    // Start at the first incomplete step
     const firstIncomplete = STEPS.findIndex(s => !done.has(s.id));
     setCurrentIdx(firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete);
     setLoading(false);
@@ -267,12 +449,9 @@ export default function OnboardingPage() {
 
     setSaving(false);
 
-    // Advance to next step or show done
     const nextIdx = STEPS.findIndex((s, i) => i > currentIdx && !newCompleted.has(s.id));
     if (nextIdx !== -1) {
       setCurrentIdx(nextIdx);
-    } else if (newCompleted.size >= STEPS.length) {
-      // All done — stay on last step to show the completion state
     } else {
       const anyNext = STEPS.findIndex(s => !newCompleted.has(s.id));
       if (anyNext !== -1) setCurrentIdx(anyNext);
@@ -280,13 +459,12 @@ export default function OnboardingPage() {
   }
 
   function skipStep() {
-    const nextIdx = currentIdx + 1;
-    if (nextIdx < STEPS.length) setCurrentIdx(nextIdx);
+    if (currentIdx < STEPS.length - 1) setCurrentIdx(currentIdx + 1);
   }
 
   const allDone = completedSteps.size >= STEPS.length;
   const step = STEPS[currentIdx];
-  const isDone = completedSteps.has(step?.id);
+  const isDone = step ? completedSteps.has(step.id) : false;
 
   if (loading) {
     return (
@@ -309,21 +487,20 @@ export default function OnboardingPage() {
       `}</style>
 
       {/* Left sidebar */}
-      <div className="ob-sidebar" style={{ width: '280px', minWidth: '280px', background: '#0a0a0a', display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto' }}>
+      <div className="ob-sidebar" style={{ width: '260px', minWidth: '260px', background: '#0a0a0a', display: 'flex', flexDirection: 'column', height: '100vh' }}>
         {/* Logo */}
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid #1c1c1c' }}>
+        <div style={{ padding: '22px 20px', borderBottom: '1px solid #1c1c1c', flexShrink: 0 }}>
           <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
             <span style={{ color: '#f5f5f5', fontWeight: '700', fontSize: '14px', letterSpacing: '-0.3px' }}>TradeDesk</span>
           </a>
         </div>
 
         {/* Progress */}
-        <div style={{ padding: '20px', borderBottom: '1px solid #1c1c1c' }}>
-          <p style={{ color: '#9ca3af', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 8px' }}>Getting started</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '22px', fontWeight: '900', color: '#f5f5f5', letterSpacing: '-1px' }}>{completedSteps.size}</span>
-            <span style={{ fontSize: '14px', color: '#525252' }}>of {STEPS.length} complete</span>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1c1c1c', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '20px', fontWeight: '900', color: '#f5f5f5', letterSpacing: '-0.8px' }}>{completedSteps.size}</span>
+            <span style={{ fontSize: '13px', color: '#525252' }}>of {STEPS.length} complete</span>
           </div>
           <div style={{ height: '3px', background: '#1c1c1c', borderRadius: '2px' }}>
             <div style={{ height: '100%', width: `${(completedSteps.size / STEPS.length) * 100}%`, background: '#16a34a', borderRadius: '2px', transition: 'width 0.4s ease' }} />
@@ -331,7 +508,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step list */}
-        <nav style={{ flex: 1, padding: '8px 0' }}>
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
           {STEPS.map((s, i) => {
             const done = completedSteps.has(s.id);
             const active = i === currentIdx;
@@ -339,16 +516,16 @@ export default function OnboardingPage() {
               <button
                 key={s.id}
                 onClick={() => setCurrentIdx(i)}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '10px 20px', background: active ? 'rgba(255,255,255,0.05)' : 'transparent', border: 'none', borderLeft: `2px solid ${active ? '#16a34a' : 'transparent'}`, cursor: 'pointer', textAlign: 'left' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '9px 20px', background: active ? 'rgba(255,255,255,0.05)' : 'transparent', border: 'none', borderLeft: `2px solid ${active ? '#16a34a' : 'transparent'}`, cursor: 'pointer', textAlign: 'left' }}
               >
-                <div style={{ width: '22px', height: '22px', borderRadius: '50%', border: `1.5px solid ${done ? '#16a34a' : active ? '#525252' : '#2e2e2e'}`, background: done ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `1.5px solid ${done ? '#16a34a' : active ? '#525252' : '#2e2e2e'}`, background: done ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {done ? (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   ) : (
-                    <span style={{ fontSize: '10px', color: active ? '#9ca3af' : '#383838', fontWeight: '700' }}>{i + 1}</span>
+                    <span style={{ fontSize: '9px', color: active ? '#9ca3af' : '#383838', fontWeight: '700' }}>{i + 1}</span>
                   )}
                 </div>
-                <span style={{ fontSize: '13px', color: done ? '#525252' : active ? '#f5f5f5' : '#525252', fontWeight: active ? '600' : '400', lineHeight: '1.3' }}>
+                <span style={{ fontSize: '12px', color: done ? '#383838' : active ? '#f5f5f5' : '#525252', fontWeight: active ? '600' : '400', lineHeight: '1.35' }}>
                   {s.title}
                 </span>
               </button>
@@ -357,7 +534,7 @@ export default function OnboardingPage() {
         </nav>
 
         {/* Footer */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #1c1c1c' }}>
+        <div style={{ padding: '14px 20px', borderTop: '1px solid #1c1c1c', flexShrink: 0 }}>
           <a href="/dashboard" style={{ fontSize: '12px', color: '#383838', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Back to dashboard
@@ -376,7 +553,7 @@ export default function OnboardingPage() {
             </div>
             <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#0a0a0a', letterSpacing: '-1.2px', margin: '0 0 12px' }}>You're all set.</h1>
             <p style={{ fontSize: '16px', color: '#6b7280', lineHeight: '1.7', margin: '0 0 36px' }}>
-              You've completed all 9 steps. TradeDesk is fully set up for your business — you can always revisit any step from this page.
+              You've completed all {STEPS.length} steps. TradeDesk is fully set up for your business — you can always come back to revisit any feature.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
               <a href="/dashboard" style={{ padding: '13px 28px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '15px', textDecoration: 'none', boxShadow: '0 4px 16px rgba(22,163,74,0.3)' }}>
@@ -387,7 +564,7 @@ export default function OnboardingPage() {
               </a>
             </div>
           </div>
-        ) : (
+        ) : step ? (
           /* Step content */
           <div style={{ maxWidth: '600px' }}>
             {/* Step counter */}
@@ -495,7 +672,7 @@ export default function OnboardingPage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 Previous
               </button>
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' as const, justifyContent: 'center', maxWidth: '200px' }}>
                 {STEPS.map((s, i) => (
                   <button
                     key={s.id}
@@ -514,7 +691,7 @@ export default function OnboardingPage() {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

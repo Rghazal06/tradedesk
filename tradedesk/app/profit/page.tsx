@@ -69,11 +69,12 @@ export default function ProfitAnalyzerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quotes, invoices, jobs }),
       });
-      const data = await res.json();
-      if (data.error) { setError(data.error); return; }
+      let data: any = {};
+      try { data = await res.json(); } catch { setError(`Server error (${res.status}). Check that OPENAI_API_KEY is set in Vercel.`); return; }
+      if (!res.ok || data.error) { setError(data.error || `Error ${res.status}`); return; }
       setAnalysis(data);
     } catch {
-      setError('Analysis failed. Please try again.');
+      setError('Network error. Could not reach the server.');
     } finally {
       setLoading(false);
     }

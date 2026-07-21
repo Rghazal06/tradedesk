@@ -207,12 +207,12 @@ export default function Sidebar({ activePath }: { activePath: string }) {
   return (
     <>
     {/* Desktop sidebar */}
-    <div className="td-sidebar" style={{ width: '220px', minWidth: '220px', background: '#0f0f0f', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, borderRight: '1px solid #1c1c1c' }}>
+    <div className="td-sidebar" style={{ width: '220px', minWidth: '220px', background: '#141c2e', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, borderRight: '1px solid #1e2d45' }}>
       {/* Logo */}
-      <div style={{ padding: '20px 18px 18px', borderBottom: '1px solid #1c1c1c' }}>
+      <div style={{ padding: '20px 18px 18px', borderBottom: '1px solid #1e2d45' }}>
         <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '11px', textDecoration: 'none' }}>
           <LogoMark onDark={true} />
-          <span style={{ color: '#f5f5f5', fontWeight: '700', fontSize: '15px', letterSpacing: '-0.4px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+          <span style={{ color: '#f0f4ff', fontWeight: '700', fontSize: '15px', letterSpacing: '-0.4px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
             TradeDesk
           </span>
         </a>
@@ -222,15 +222,15 @@ export default function Sidebar({ activePath }: { activePath: string }) {
       <nav style={{ flex: 1, padding: '4px 10px 8px', overflowY: 'auto' }}>
         {NAV_GROUPS.map(group => (
           <div key={group.label}>
-            <p style={{ color: '#2e2e2e', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '16px 0 4px', padding: '0 8px' }}>
+            <p style={{ color: '#4a6080', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '16px 0 4px', padding: '0 8px' }}>
               {group.label}
             </p>
             {group.items.map(item => {
               const isActive = active(item.href);
               const IconComp = Icon[item.icon];
               return (
-                <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '6px 8px', borderRadius: '5px', marginBottom: '1px', textDecoration: 'none', fontSize: '13px', fontWeight: isActive ? '600' : '400', color: isActive ? '#f5f5f5' : '#525252', background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent', borderLeft: `2px solid ${isActive ? '#16a34a' : 'transparent'}` }}>
-                  <span style={{ color: isActive ? '#16a34a' : '#383838', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                <a key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '6px 8px', borderRadius: '6px', marginBottom: '1px', textDecoration: 'none', fontSize: '13px', fontWeight: isActive ? '600' : '400', color: isActive ? '#f0f4ff' : '#8faac4', background: isActive ? 'rgba(255,255,255,0.09)' : 'transparent', borderLeft: `2px solid ${isActive ? '#16a34a' : 'transparent'}` }}>
+                  <span style={{ color: isActive ? '#16a34a' : '#4a6080', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
                     {IconComp && <IconComp />}
                   </span>
                   {item.label}
@@ -242,11 +242,11 @@ export default function Sidebar({ activePath }: { activePath: string }) {
       </nav>
 
       {/* Notifications + Sign out */}
-      <div style={{ padding: '8px 10px 10px', borderTop: '1px solid #1c1c1c', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <div style={{ padding: '8px 10px 10px', borderTop: '1px solid #1e2d45', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <NotificationBell />
         <button
           onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
-          style={{ display: 'flex', alignItems: 'center', gap: '9px', width: '100%', padding: '7px 8px', background: 'transparent', border: 'none', borderRadius: '5px', color: '#383838', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '9px', width: '100%', padding: '7px 8px', background: 'transparent', border: 'none', borderRadius: '6px', color: '#4a6080', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
         >
           <Icon.signout />
           Sign out
@@ -255,7 +255,7 @@ export default function Sidebar({ activePath }: { activePath: string }) {
     </div>
 
     {/* Mobile bottom nav */}
-    <div className="td-bottom-nav" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#0f0f0f', borderTop: '1px solid #1c1c1c', flexDirection: 'row', alignItems: 'stretch', height: '62px' }}>
+    <div className="td-bottom-nav" style={{ display: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#141c2e', borderTop: '1px solid #1e2d45', flexDirection: 'row', alignItems: 'stretch', height: '62px' }}>
       {BOTTOM_NAV_ITEMS.map(item => {
         const isActive = active(item.href);
         const IconComp = Icon[item.icon];
@@ -263,9 +263,9 @@ export default function Sidebar({ activePath }: { activePath: string }) {
           <a
             key={item.href}
             href={item.href}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', textDecoration: 'none', color: isActive ? '#16a34a' : '#525252', background: 'transparent', borderTop: `2px solid ${isActive ? '#16a34a' : 'transparent'}`, padding: '8px 0' }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', textDecoration: 'none', color: isActive ? '#16a34a' : '#8faac4', background: 'transparent', borderTop: `2px solid ${isActive ? '#16a34a' : 'transparent'}`, padding: '8px 0' }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#16a34a' : '#525252' }}>
+            <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#16a34a' : '#8faac4' }}>
               {IconComp && <IconComp />}
             </span>
             <span style={{ fontSize: '10px', fontWeight: isActive ? '700' : '500', letterSpacing: '0.1px' }}>

@@ -71,15 +71,24 @@ export default function AssistantPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: messageText, userId }),
       });
-      const data = await res.json();
+
+      let data: { reply?: string; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        // Server returned non-JSON (e.g. HTML error page from Vercel)
+        setMessages(prev => [...prev, { role: 'assistant', content: `Server error (${res.status}). Check that OPENAI_API_KEY is set in Vercel environment variables.`, timestamp: new Date() }]);
+        return;
+      }
+
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.reply || data.error || 'Something went wrong.',
+        content: res.ok ? (data.reply || 'No response.') : (data.error || `Error ${res.status}`),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Please try again.', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Network error — could not reach the server. Check your connection and try again.', timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }

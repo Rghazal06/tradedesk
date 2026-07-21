@@ -220,12 +220,12 @@ function SettingsContent() {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
                       readOnly
-                      value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://tradedesk.ca'}/signup?ref=${referralCode}`}
+                      value={`${process.env.NEXT_PUBLIC_APP_URL || 'https://mytradedesk.ca'}/signup?ref=${referralCode}`}
                       style={{ ...inputStyle, flex: 1, color: '#6b7280' }}
                     />
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL || 'https://tradedesk.ca'}/signup?ref=${referralCode}`);
+                        navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL || 'https://mytradedesk.ca'}/signup?ref=${referralCode}`);
                         setMessage('Referral link copied!');
                         setTimeout(() => setMessage(''), 2000);
                       }}
@@ -444,7 +444,7 @@ function SettingsContent() {
                     <p style={{ fontSize: '12px', fontWeight: '700', color: '#15803d', margin: '0 0 6px' }}>Your booking link</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <code style={{ fontSize: '12px', color: '#374151', background: 'white', border: '1px solid #d1fae5', padding: '6px 10px', borderRadius: '6px', flex: 1, overflowX: 'auto' }}>
-                        {typeof window !== 'undefined' ? window.location.origin : 'https://tradedesk.ca'}/book/{profile.public_slug}
+                        {typeof window !== 'undefined' ? window.location.origin : 'https://mytradedesk.ca'}/book/{profile.public_slug}
                       </code>
                       <button
                         onClick={() => navigator.clipboard.writeText(`${window.location.origin}/book/${profile.public_slug}`)}
