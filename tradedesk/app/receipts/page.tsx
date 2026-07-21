@@ -72,6 +72,7 @@ function fmt(n: number | null | undefined) {
 export default function ReceiptsPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const editPhotoRef = useRef<HTMLInputElement>(null);
 
   const [userId, setUserId] = useState('');
   const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -101,6 +102,11 @@ export default function ReceiptsPage() {
     merchant: '', date: '', category: '', subtotal: '', tax: '', amount: '', notes: '', job_id: '',
     line_items: [] as LineItem[],
   });
+  // Edit mode photo upload
+  const [editPhotoBase64, setEditPhotoBase64] = useState('');
+  const [editPhotoMime, setEditPhotoMime] = useState('image/jpeg');
+  const [editPhotoPreview, setEditPhotoPreview] = useState('');
+  const [editPhotoUploading, setEditPhotoUploading] = useState(false);
 
   // Filters
   const [filterCategory, setFilterCategory] = useState('');
@@ -162,12 +168,15 @@ export default function ReceiptsPage() {
       for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
       const blob = new Blob([ab], { type: imageMime });
 
-      const { data: uploadData } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('receipts')
         .upload(filename, blob, { contentType: imageMime, upsert: true });
       if (uploadData) {
         const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(filename);
         setUploadedImageUrl(urlData?.publicUrl || '');
+      } else {
+        const msg = uploadError?.message ?? 'unknown error';
+        setMessage({ text: `Photo upload failed: ${msg}. Make sure the "receipts" bucket exists in Supabase Storage and is set to public. The receipt will still be saved without a photo.`, type: 'error' });
       }
 
       // Scan
@@ -221,10 +230,31 @@ export default function ReceiptsPage() {
       job_id: r.job_id || '',
       line_items: r.line_items ? r.line_items.map(li => ({ ...li })) : [],
     });
+    setEditPhotoBase64('');
+    setEditPhotoMime('image/jpeg');
+    setEditPhotoPreview('');
     setEditMode(true);
   }
 
-  function cancelEdit() { setEditMode(false); }
+  function cancelEdit() {
+    setEditMode(false);
+    setEditPhotoBase64('');
+    setEditPhotoPreview('');
+  }
+
+  function handleEditPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (editPhotoRef.current) editPhotoRef.current.value = '';
+    setEditPhotoMime(file.type || 'image/jpeg');
+    setEditPhotoPreview(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      setEditPhotoBase64(base64);
+    };
+    reader.readAsDataURL(file);
+  }
 
   function addLineItem() {
     setEditForm(f => ({ ...f, line_items: [...f.line_items, { description: '', qty: 1, unit_price: null, amount: 0 }] }));
@@ -260,6 +290,33 @@ export default function ReceiptsPage() {
       setMessage({ text: 'Merchant and total amount are required.', type: 'error' }); return;
     }
     setEditSaving(true);
+
+    // Upload new photo if one was selected
+    let newImageUrl: string = viewReceipt.image_url || '';
+    if (editPhotoBase64) {
+      setEditPhotoUploading(true);
+      const filename = `${userId}/${Date.now()}.jpg`;
+      const byteString = atob(editPhotoBase64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+      const blob = new Blob([ab], { type: editPhotoMime });
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(filename, blob, { contentType: editPhotoMime, upsert: true });
+      if (uploadData) {
+        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(filename);
+        newImageUrl = urlData?.publicUrl || newImageUrl;
+      } else {
+        const msg = uploadError?.message ?? 'unknown error';
+        setMessage({ text: `Photo upload failed: ${msg}. Make sure the "receipts" bucket exists in Supabase Storage and is set to public.`, type: 'error' });
+        setEditSaving(false);
+        setEditPhotoUploading(false);
+        return;
+      }
+      setEditPhotoUploading(false);
+    }
+
     const payload = {
       merchant: editForm.merchant.trim(),
       date: editForm.date,
@@ -270,14 +327,17 @@ export default function ReceiptsPage() {
       notes: editForm.notes,
       job_id: editForm.job_id || null,
       line_items: editForm.line_items.length > 0 ? editForm.line_items : null,
+      image_url: newImageUrl || null,
     };
     const { error } = await supabase.from('receipts').update(payload).eq('id', viewReceipt.id);
     if (error) {
       setMessage({ text: 'Error saving: ' + error.message, type: 'error' });
     } else {
-      const updated: Receipt = { ...viewReceipt, ...payload };
+      const updated: Receipt = { ...viewReceipt, ...payload, image_url: newImageUrl };
       setViewReceipt(updated);
       setEditMode(false);
+      setEditPhotoBase64('');
+      setEditPhotoPreview('');
       setMessage({ text: 'Receipt updated!', type: 'success' });
       await loadReceipts(userId);
     }
@@ -711,34 +771,75 @@ export default function ReceiptsPage() {
             <div className="rec-view-grid" style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '260px 1fr' }}>
               {/* Left: receipt photo */}
               <div className="rec-view-img" style={{ borderRight: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', gap: '12px', overflowY: 'auto' }}>
-                {viewReceipt.image_url ? (
+                {/* Hidden file input for edit-mode photo upload */}
+                <input ref={editPhotoRef} type="file" accept="image/*" onChange={handleEditPhotoChange} style={{ display: 'none' }} />
+
+                {editMode ? (
+                  /* Edit mode: show new preview or existing photo, with upload button */
                   <>
-                    <img
-                      src={viewReceipt.image_url}
-                      alt="Receipt"
-                      style={{ width: '100%', borderRadius: '10px', border: '1px solid #e5e7eb', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', display: 'block' }}
-                      onError={e => {
-                        const el = e.currentTarget;
-                        el.style.display = 'none';
-                        const next = el.nextElementSibling as HTMLElement | null;
-                        if (next) next.style.display = 'flex';
-                      }}
-                    />
-                    <div style={{ display: 'none', width: '100%', background: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
-                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 8v5M11 15h.01" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round"/><circle cx="11" cy="11" r="9" stroke="#b45309" strokeWidth="1.8"/></svg>
-                      <p style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', margin: 0 }}>Image not loading</p>
-                      <p style={{ fontSize: '11px', color: '#92400e', margin: 0 }}>Make the receipts bucket public in Supabase Storage</p>
-                    </div>
-                    <a href={viewReceipt.image_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      Open full size
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 9L9 1M9 1H4M9 1V6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                    </a>
+                    {editPhotoPreview ? (
+                      <img
+                        src={editPhotoPreview}
+                        alt="New receipt photo"
+                        style={{ width: '100%', borderRadius: '10px', border: '2px solid #bfdbfe', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', display: 'block' }}
+                      />
+                    ) : viewReceipt.image_url ? (
+                      <>
+                        <img
+                          src={viewReceipt.image_url}
+                          alt="Receipt"
+                          style={{ width: '100%', borderRadius: '10px', border: '1px solid #e5e7eb', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', display: 'block' }}
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
+                        />
+                      </>
+                    ) : (
+                      <div style={{ width: '100%', height: '160px', background: '#f3f4f6', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#9ca3af', border: '1px dashed #d1d5db' }}>
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="2" width="18" height="24" rx="2" stroke="#d1d5db" strokeWidth="1.5"/><line x1="7" y1="8" x2="17" y2="8" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/><line x1="7" y1="12" x2="17" y2="12" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/><line x1="7" y1="16" x2="13" y2="16" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                        <span style={{ fontSize: '12px' }}>No photo yet</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => editPhotoRef.current?.click()}
+                      disabled={editPhotoUploading}
+                      style={{ width: '100%', padding: '9px 0', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: editPhotoUploading ? 'not-allowed' : 'pointer', opacity: editPhotoUploading ? 0.6 : 1 }}
+                    >
+                      {editPhotoUploading ? 'Uploading...' : (viewReceipt.image_url || editPhotoPreview) ? 'Replace Photo' : 'Upload Photo'}
+                    </button>
+                    {editPhotoPreview && (
+                      <p style={{ fontSize: '11px', color: '#6b7280', margin: 0, textAlign: 'center' }}>Photo will be saved when you click Save Changes</p>
+                    )}
                   </>
                 ) : (
-                  <div style={{ width: '100%', height: '200px', background: '#f3f4f6', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#9ca3af', border: '1px dashed #d1d5db' }}>
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="2" width="18" height="24" rx="2" stroke="#d1d5db" strokeWidth="1.5"/><line x1="7" y1="8" x2="17" y2="8" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/><line x1="7" y1="12" x2="17" y2="12" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/><line x1="7" y1="16" x2="13" y2="16" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                    <span style={{ fontSize: '12px' }}>No photo</span>
-                  </div>
+                  /* View mode: existing behaviour */
+                  viewReceipt.image_url ? (
+                    <>
+                      <img
+                        src={viewReceipt.image_url}
+                        alt="Receipt"
+                        style={{ width: '100%', borderRadius: '10px', border: '1px solid #e5e7eb', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', display: 'block' }}
+                        onError={e => {
+                          const el = e.currentTarget;
+                          el.style.display = 'none';
+                          const next = el.nextElementSibling as HTMLElement | null;
+                          if (next) next.style.display = 'flex';
+                        }}
+                      />
+                      <div style={{ display: 'none', width: '100%', background: '#fefce8', border: '1px solid #fde68a', borderRadius: '10px', padding: '16px', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 8v5M11 15h.01" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round"/><circle cx="11" cy="11" r="9" stroke="#b45309" strokeWidth="1.8"/></svg>
+                        <p style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', margin: 0 }}>Image not loading</p>
+                        <p style={{ fontSize: '11px', color: '#92400e', margin: 0 }}>Make the receipts bucket public in Supabase Storage</p>
+                      </div>
+                      <a href={viewReceipt.image_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        Open full size
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 9L9 1M9 1H4M9 1V6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                      </a>
+                    </>
+                  ) : (
+                    <div style={{ width: '100%', height: '200px', background: '#f3f4f6', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#9ca3af', border: '1px dashed #d1d5db' }}>
+                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="2" width="18" height="24" rx="2" stroke="#d1d5db" strokeWidth="1.5"/><line x1="7" y1="8" x2="17" y2="8" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/><line x1="7" y1="12" x2="17" y2="12" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/><line x1="7" y1="16" x2="13" y2="16" stroke="#d1d5db" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                      <span style={{ fontSize: '12px' }}>No photo</span>
+                    </div>
+                  )
                 )}
               </div>
 
