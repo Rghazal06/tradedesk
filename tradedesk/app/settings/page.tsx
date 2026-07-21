@@ -470,10 +470,10 @@ function SettingsContent() {
                 Upgrade to Pro
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
               {[
                 { name: 'Starter', price: '$99/month', desc: 'Quotes, Invoices, WSIB, Jobs', priceId: 'price_1TYyLwHtCISkRQL6TBKz9xQh', highlight: false },
-                { name: 'Pro', price: '$199/month', desc: 'Everything + Priority Support', priceId: 'price_1TYyMaHtCISkRQL6RWAB2eoo', highlight: true },
+                { name: 'Pro', price: '$199/month', desc: 'Everything + AI features + Priority Support', priceId: 'price_1TYyMaHtCISkRQL6RWAB2eoo', highlight: true },
               ].map(plan => (
                 <div key={plan.name} style={{
                   padding: '20px', border: `1px solid ${plan.highlight ? '#bbf7d0' : '#e5e7eb'}`,
@@ -497,6 +497,22 @@ function SettingsContent() {
                   </button>
                 </div>
               ))}
+            </div>
+            {/* Enterprise */}
+            <div style={{ border: '1px solid #1e2d45', background: '#141c2e', borderRadius: '10px', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <p style={{ fontWeight: '700', color: '#f0f4ff', margin: 0, fontSize: '14px' }}>Enterprise</p>
+                  <span style={{ background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: '100px', padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#4ade80', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Custom pricing</span>
+                </div>
+                <p style={{ color: '#8faac4', fontSize: '13px', margin: 0 }}>Multiple users, dedicated support, custom onboarding, volume pricing</p>
+              </div>
+              <a
+                href={`mailto:rayanghazal06@gmail.com?subject=Enterprise%20Plan%20Inquiry`}
+                style={{ flexShrink: 0, padding: '10px 20px', background: '#16a34a', color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap' as const }}
+              >
+                Talk to us
+              </a>
             </div>
           </div>
         </div>
