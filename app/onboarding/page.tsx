@@ -633,23 +633,26 @@ export default function OnboardingPage() {
                 </>
               ) : (
                 <>
-                  <a
+                  <button
                     className="ob-btn-primary"
+                    onClick={() => void markDone(step.id)}
+                    disabled={saving}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 24px', background: step.color, color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FF, boxShadow: `0 4px 16px ${step.color}33`, opacity: saving ? 0.7 : 1 }}
+                  >
+                    {saving ? 'Saving...' : (
+                      <>
+                        <svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 5.5l4 4 7-8" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        Mark as done
+                      </>
+                    )}
+                  </button>
+                  <a
                     href={step.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '13px 24px', background: step.color, color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', boxShadow: `0 4px 16px ${step.color}33` }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '13px 20px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontWeight: '600', fontSize: '14px', textDecoration: 'none' }}
                   >
                     {step.cta}
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H6M11 2v5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6M6 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </a>
-                  <button
-                    onClick={() => markDone(step.id)}
-                    disabled={saving}
-                    style={{ padding: '13px 20px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', fontFamily: FF, opacity: saving ? 0.6 : 1 }}
-                  >
-                    {saving ? 'Saving...' : 'Mark as done'}
-                  </button>
                   {currentIdx < STEPS.length - 1 && (
                     <button
                       onClick={skipStep}
