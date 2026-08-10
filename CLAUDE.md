@@ -120,6 +120,7 @@ Every table has RLS enabled. Service role bypasses RLS — always filter by `use
 | `pricebook_items` | id, user_id, name, description, unit_price, unit, category, created_at |
 | `coi_entries` | id, user_id, provider, policy_number, coverage_type, expiry_date, document_url, created_at |
 | `leads` | id, user_id, phone, name, message, status, source, created_at |
+| `sms_conversations` | id, user_id, customer_phone, customer_name, messages (jsonb, `{direction:'inbound'\|'outbound',body,ts}[]`), last_message_at, created_at — unique on (user_id, customer_phone). Two-way texting with known clients, separate from `sms_leads` (missed-call AI bot). |
 | `onboarding_emails` | id, user_id, email_number, sent_at, created_at |
 | `job_reports` | id, user_id, job_id, content, share_token, created_at |
 | `bookings` | id, contractor_id, customer_name, customer_email, customer_phone, scheduled_date, scheduled_time, duration_minutes, notes, status, created_at |
@@ -173,7 +174,8 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 - `POST /api/invoices/create-checkout` — Looks up an invoice by `payment_token`, creates a dynamic Stripe Checkout session for the invoice total plus an optional tip line item
 - `GET /api/booking/[slug]/availability` — Available booking slots
 - `POST /api/booking/[slug]/book` — Create a booking
-- `POST /api/leads/sms` — Twilio webhook, saves lead + sends AI auto-reply
+- `POST /api/twilio/sms` — Twilio inbound SMS webhook (actual path — not `/api/leads/sms` as previously documented). Checks `sms_conversations` first (known client reply → files it there + notifies contractor, no AI reply); otherwise falls through to the missed-call AI qualification bot → `sms_leads`.
+- `POST /api/twilio/voice` — Twilio inbound call webhook for the missed-call bot
 
 ### Authenticated
 - `POST /api/scan-receipt` — OpenAI Vision receipt extraction (rate limited)
@@ -182,6 +184,7 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 - `POST /api/ai-assistant` — AI chat (rate limited)
 - `POST /api/send-review-request` — Manually-triggered Google review request SMS (rate limited, 10/hr/user)
 - `POST /api/create-checkout` — Creates a Stripe subscription Checkout session for the authenticated user (sets `client_reference_id` + `metadata.plan` so the webhook can attribute the resulting event)
+- `POST /api/sms/send` — Contractor texts a known client from their own `profiles.twilio_phone`; upserts `sms_conversations`. Requires `twilio_phone` to be set in Settings first.
 
 ### Webhooks (Stripe signature auth, not getAuthUser)
 - `POST /api/webhooks/stripe` — The only place `profiles.subscription_status` is ever written. Handles:
@@ -225,8 +228,10 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 3. **Custom domain** — Live at `https://mytradedesk.ca` (Vercel domain `tradedesk-eight.vercel.app` still works too). Confirm `NEXT_PUBLIC_APP_URL` is set to `https://mytradedesk.ca` in Vercel env vars.
 4. **Resend domain** — Email sends from `noreply@mytradedesk.ca`. Already matches the live domain — no change needed.
 5. **App audit** (Task #47 in_progress) — Full audit of all app pages for UX/bug issues. Task #48 is implementing the fixes.
-6. **Stripe webhook is not yet registered in the Stripe Dashboard.** The code at `/api/webhooks/stripe` exists and is correct, but Stripe needs to be told to actually call it: in the Stripe Dashboard → Developers → Webhooks, add an endpoint at `https://mytradedesk.ca/api/webhooks/stripe` listening for `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`, then copy the generated signing secret into `STRIPE_WEBHOOK_SECRET` in Vercel. **Until this is done, subscriptions still won't activate and invoice payment links still won't auto-mark-paid** — the webhook code alone doesn't do anything without Stripe knowing to call it. Test with the Stripe CLI (`stripe listen --forward-to localhost:3000/api/webhooks/stripe`) before wiring the live endpoint.
-7. **Remaining confirmed gaps against Jobber** (identified 2026-08-10, roadmap in progress): ~~deposit collection on quotes~~, ~~tip collection on invoices~~, and ~~job checklists~~ shipped 2026-08-10. Still missing: no batch invoicing, no recurring jobs, no time tracking/clock-in, no two-way texting for regular clients (only for missed-call leads), no drag-and-drop calendar, no QuickBooks/Zapier/Mailchimp integration, no route optimization.
+6. ~~Stripe webhook not registered~~ — **done 2026-08-10.** Event destination is live in the Stripe Dashboard pointing at `https://mytradedesk.ca/api/webhooks/stripe`; verified end-to-end in production (subscription activation, deposit approval, invoice auto-paid all confirmed working).
+7. **Remaining confirmed gaps against Jobber** (identified 2026-08-10, roadmap in progress): ~~deposit collection on quotes~~, ~~tip collection on invoices~~, ~~job checklists~~, and ~~two-way texting for known clients~~ shipped 2026-08-10 (texting is SMS-only via Twilio, no in-app messaging UI — see Key Architecture Decisions). Still missing: no batch invoicing, no recurring jobs, no time tracking/clock-in, no drag-and-drop calendar, no QuickBooks/Zapier/Mailchimp integration, no route optimization.
+8. **Settings page save is fragile.** `app/settings/page.tsx` `saveProfile()` does one big `upsert` across every field at once (personal info, business info, booking config, twilio_phone, etc.). If ANY field trips a DB constraint — e.g. `public_slug` colliding with another contractor's slug via the `profiles_public_slug_key` unique constraint — the ENTIRE save silently fails and every field on the page reverts, not just the offending one. Worse, the error banner shows a green checkmark with "Something went wrong" (line ~148 hardcodes `✓ {message}` regardless of success/failure), so it visually reads as a success message. Found 2026-08-10 while trying to save a Twilio number — the real blocker was an unrelated slug collision. Should be split into per-section saves, or at minimum surface the actual Postgres error and fix the checkmark to only show on real success.
+9. **Twilio webhook URLs must be configured per-number in the Twilio Console** (Developers → Phone Numbers → your number → "A Message Comes In" / "A Call Comes In"), pointing at `https://mytradedesk.ca/api/twilio/sms` and `/api/twilio/voice`. This is entirely outside the app — TradeDesk has no way to configure it programmatically, and Twilio cannot deliver webhooks to `localhost` without a tunnel (e.g. ngrok), unlike Stripe which has `stripe listen` for local testing.
 
 ---
 

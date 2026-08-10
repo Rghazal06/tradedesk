@@ -119,3 +119,23 @@ alter table invoices add column if not exists tip_amount numeric;
 -- Feature 12: Job checklists
 -- -------------------------------------------------------
 alter table jobs add column if not exists checklist jsonb default '[]';
+
+-- -------------------------------------------------------
+-- Feature 13: Two-way texting for existing clients
+-- Separate from sms_leads (missed-call AI qualification bot).
+-- Contractor-initiated conversations with known customers, sent from
+-- their own profiles.twilio_phone (same number leads already use).
+-- -------------------------------------------------------
+create table if not exists sms_conversations (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade,
+  customer_phone text not null,
+  customer_name text,
+  messages jsonb default '[]',
+  last_message_at timestamp with time zone default timezone('utc'::text, now()),
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  unique (user_id, customer_phone)
+);
+alter table sms_conversations enable row level security;
+create policy "Users can manage own sms conversations" on sms_conversations
+  for all using (auth.uid() = user_id);

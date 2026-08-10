@@ -32,6 +32,10 @@ export default function ClientsPage() {
   const [clientQuotes, setClientQuotes] = useState<any[]>([]);
   const [clientInvoices, setClientInvoices] = useState<any[]>([]);
   const [clientJobs, setClientJobs] = useState<any[]>([]);
+  const [messages, setMessages] = useState<{ direction: 'inbound' | 'outbound'; body: string; ts: string }[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [messageError, setMessageError] = useState('');
 
   useEffect(() => { loadClients(); }, []);
 
@@ -93,6 +97,8 @@ export default function ClientsPage() {
 
   async function selectClient(client: Client) {
     setSelected(client);
+    setMessages([]);
+    setMessageError('');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const name = client.name;
@@ -104,6 +110,33 @@ export default function ClientsPage() {
     setClientQuotes(q.data || []);
     setClientInvoices(inv.data || []);
     setClientJobs(j.data || []);
+
+    if (client.phone) {
+      const { data: convo } = await supabase.from('sms_conversations').select('messages').eq('user_id', user.id).eq('customer_phone', client.phone).single();
+      setMessages(convo?.messages || []);
+    }
+  }
+
+  async function sendMessage() {
+    if (!selected?.phone || !newMessage.trim()) return;
+    setSendingMessage(true);
+    setMessageError('');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setMessageError('Please sign in.'); setSendingMessage(false); return; }
+    try {
+      const res = await fetch('/api/sms/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ customerPhone: selected.phone, customerName: selected.name, body: newMessage.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMessageError(data.error || 'Could not send message.'); setSendingMessage(false); return; }
+      setMessages(data.messages || []);
+      setNewMessage('');
+    } catch {
+      setMessageError('Network error.');
+    }
+    setSendingMessage(false);
   }
 
   const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()));
@@ -215,6 +248,46 @@ export default function ClientsPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Messages */}
+              {selected.phone && (
+                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb' }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#111', margin: 0 }}>Text Messages</h3>
+                  </div>
+                  <div style={{ maxHeight: '260px', overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {messages.length === 0 ? (
+                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>No messages yet. Send one below.</p>
+                    ) : (
+                      messages.map((m, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: m.direction === 'outbound' ? 'flex-end' : 'flex-start' }}>
+                          <div style={{
+                            maxWidth: '75%', padding: '8px 12px', borderRadius: '12px', fontSize: '13px',
+                            background: m.direction === 'outbound' ? '#16a34a' : '#f3f4f6',
+                            color: m.direction === 'outbound' ? 'white' : '#111',
+                          }}>
+                            {m.body}
+                            <div style={{ fontSize: '10px', marginTop: '3px', opacity: 0.7 }}>{new Date(m.ts).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {messageError && <p style={{ color: '#dc2626', fontSize: '12px', margin: '0 20px 8px' }}>{messageError}</p>}
+                  <div style={{ display: 'flex', gap: '8px', padding: '12px 20px', borderTop: '1px solid #f3f4f6' }}>
+                    <input
+                      value={newMessage}
+                      onChange={e => setNewMessage(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
+                      placeholder="Type a message..."
+                      style={{ flex: 1, padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', color: '#111', background: '#f9fafb', outline: 'none' }}
+                    />
+                    <button onClick={sendMessage} disabled={sendingMessage} style={{ padding: '8px 16px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', opacity: sendingMessage ? 0.6 : 1 }}>
+                      {sendingMessage ? '...' : 'Send'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Quotes */}
               {clientQuotes.length > 0 && (

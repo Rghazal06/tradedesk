@@ -42,7 +42,45 @@ export async function POST(req: NextRequest) {
     .eq('twilio_phone', toPhone)
     .single();
 
-  if (!profile || !profile.sms_bot_enabled) {
+  if (!profile) {
+    return new NextResponse(
+      `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
+      { headers: { 'Content-Type': 'text/xml' } }
+    );
+  }
+
+  // If this number already has a two-way client conversation, this is a reply from
+  // a known customer, not a cold lead — file it there instead of running the AI
+  // qualification bot, and just notify the contractor to reply personally.
+  const { data: conversation } = await supabase
+    .from('sms_conversations')
+    .select('id, messages')
+    .eq('user_id', profile.id)
+    .eq('customer_phone', callerPhone)
+    .single();
+
+  if (conversation) {
+    const updated = [...(conversation.messages || []), { direction: 'inbound', body: incomingMessage, ts: new Date().toISOString() }];
+    await supabase.from('sms_conversations').update({
+      messages: updated,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', conversation.id);
+
+    await supabase.from('notifications').insert({
+      user_id: profile.id,
+      title: 'New text message',
+      message: `New reply from ${callerPhone}: "${incomingMessage.slice(0, 100)}"`,
+      type: 'sms',
+      read: false,
+    });
+
+    return new NextResponse(
+      `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
+      { headers: { 'Content-Type': 'text/xml' } }
+    );
+  }
+
+  if (!profile.sms_bot_enabled) {
     return new NextResponse(
       `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
       { headers: { 'Content-Type': 'text/xml' } }
