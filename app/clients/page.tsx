@@ -39,6 +39,20 @@ export default function ClientsPage() {
 
   useEffect(() => { loadClients(); }, []);
 
+  // Poll for new inbound texts while a conversation is open — replies can arrive
+  // from Twilio at any time, not just when the contractor sends something.
+  useEffect(() => {
+    if (!selected?.phone) return;
+    const phone = selected.phone;
+    const interval = setInterval(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: convo } = await supabase.from('sms_conversations').select('messages').eq('user_id', user.id).eq('customer_phone', phone).single();
+      if (convo?.messages) setMessages(convo.messages);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [selected?.phone]);
+
   async function loadClients() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/login'); return; }
@@ -112,7 +126,10 @@ export default function ClientsPage() {
     setClientJobs(j.data || []);
 
     if (client.phone) {
-      const { data: convo } = await supabase.from('sms_conversations').select('messages').eq('user_id', user.id).eq('customer_phone', client.phone).single();
+      const { data: convo, error: convoError } = await supabase.from('sms_conversations').select('messages').eq('user_id', user.id).eq('customer_phone', client.phone).single();
+      if (convoError) {
+        console.error('sms_conversations fetch error:', convoError, { userId: user.id, phone: client.phone });
+      }
       setMessages(convo?.messages || []);
     }
   }

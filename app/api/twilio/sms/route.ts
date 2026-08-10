@@ -52,19 +52,27 @@ export async function POST(req: NextRequest) {
   // If this number already has a two-way client conversation, this is a reply from
   // a known customer, not a cold lead — file it there instead of running the AI
   // qualification bot, and just notify the contractor to reply personally.
-  const { data: conversation } = await supabase
+  const { data: conversation, error: conversationLookupError } = await supabase
     .from('sms_conversations')
     .select('id, messages')
     .eq('user_id', profile.id)
     .eq('customer_phone', callerPhone)
     .single();
 
+  if (conversationLookupError) {
+    console.error('twilio/sms conversation lookup error:', conversationLookupError, { userId: profile.id, callerPhone });
+  }
+
   if (conversation) {
     const updated = [...(conversation.messages || []), { direction: 'inbound', body: incomingMessage, ts: new Date().toISOString() }];
-    await supabase.from('sms_conversations').update({
+    const { error: updateError } = await supabase.from('sms_conversations').update({
       messages: updated,
       last_message_at: new Date().toISOString(),
     }).eq('id', conversation.id);
+
+    if (updateError) {
+      console.error('twilio/sms conversation update error:', updateError, { conversationId: conversation.id });
+    }
 
     await supabase.from('notifications').insert({
       user_id: profile.id,

@@ -61,32 +61,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to send message.' }, { status: 502 });
     }
 
-    const { data: existing } = await supabase
+    const { data: existing, error: lookupError } = await supabase
       .from('sms_conversations')
       .select('id, messages')
       .eq('user_id', user.id)
       .eq('customer_phone', customerPhone)
       .single();
 
+    if (lookupError) {
+      console.error('sms/send lookup error:', lookupError);
+    }
+
     const newMessage = { direction: 'outbound', body: messageBody, ts: new Date().toISOString() };
 
     if (existing) {
       const updated = [...(existing.messages || []), newMessage];
-      await supabase.from('sms_conversations').update({
+      const { error: updateError } = await supabase.from('sms_conversations').update({
         messages: updated,
         last_message_at: new Date().toISOString(),
         ...(customerName ? { customer_name: customerName } : {}),
       }).eq('id', existing.id);
+      if (updateError) {
+        console.error('sms/send update error:', updateError);
+        return NextResponse.json({ error: 'Message sent but failed to save to conversation history.' }, { status: 500 });
+      }
       return NextResponse.json({ success: true, messages: updated });
     } else {
       const messages = [newMessage];
-      await supabase.from('sms_conversations').insert({
+      const { error: insertError } = await supabase.from('sms_conversations').insert({
         user_id: user.id,
         customer_phone: customerPhone,
         customer_name: customerName || null,
         messages,
         last_message_at: new Date().toISOString(),
       });
+      if (insertError) {
+        console.error('sms/send insert error:', insertError);
+        return NextResponse.json({ error: 'Message sent but failed to save to conversation history.' }, { status: 500 });
+      }
       return NextResponse.json({ success: true, messages });
     }
   } catch (error) {
