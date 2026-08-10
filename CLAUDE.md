@@ -241,7 +241,7 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 
 | Plan | Price | Features |
 |---|---|---|
-| Starter | $99 CAD/month | Quotes, Invoices, Jobs, WSIB, Appointments, Client Portal, Per-job profit bar, Google review SMS, Automated follow-ups |
+| Starter | $99 CAD/month | Quotes, Invoices, Jobs (with checklists), WSIB, Appointments, Client Portal, deposits + tips via Stripe, two-way client texting, Per-job costing, Google review SMS |
 | Pro | $199 CAD/month | Everything in Starter + AI Assistant, AI Profit Analyzer, SMS missed-call handler, Priority support |
 | Enterprise | Custom | Custom features, dedicated support |
 

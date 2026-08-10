@@ -188,7 +188,9 @@ export default function LandingPage() {
               { feature: 'Priced in Canadian dollars', sheets: true, jobber: false, td: true },
               { feature: 'Quotes + invoices', sheets: false, jobber: true, td: true },
               { feature: 'AI quote generation', sheets: false, jobber: true, td: true },
-              { feature: 'Stripe payment links', sheets: false, jobber: true, td: true },
+              { feature: 'Online payments, deposits + tipping', sheets: false, jobber: true, td: true },
+              { feature: 'Two-way client texting', sheets: false, jobber: true, td: true },
+              { feature: 'Customizable job checklists', sheets: false, jobber: true, td: true },
               { feature: 'AI receipt scanning with line items', sheets: false, jobber: false, td: true },
             ].map((row, i) => (
               <div key={row.feature} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', borderTop: i === 0 ? 'none' : '1px solid #f3f4f6' }}>
@@ -284,10 +286,11 @@ export default function LandingPage() {
           <div className="td-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', background: '#e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
             {[
               { title: 'AI Quote Generator', desc: 'Describe the job in plain English — "200A panel upgrade, 3 bed house, London ON." TradeDesk writes a professional itemized quote with HST in seconds. No more quoting from memory.', tag: 'Powered by GPT-4o' },
-              { title: 'Online Payments', desc: 'Every invoice gets a Stripe payment link. Customers pay by card or bank transfer the day they receive it. Funds hit your account the next business day.', tag: 'Stripe-powered' },
+              { title: 'Online Payments, Deposits & Tips', desc: "Every invoice gets a branded pay page where customers can add a tip before paying by card. Require a deposit on a quote and it auto-approves the moment they pay. Funds hit your account the next business day.", tag: 'Stripe-powered' },
               { title: 'AI Receipt Scanning', desc: 'Photograph a Home Depot receipt on site. AI extracts every line item, amount, and category automatically. Every expense tracked, every purchase categorized for tax time.', tag: 'Line-item extraction' },
               { title: 'Client CRM', desc: "Every customer's complete history — quotes, invoices, jobs, contact info — in one place. See at a glance what they've been quoted, what they owe, and when you last spoke.", tag: 'Full history' },
-              { title: 'Job Management', desc: 'Create jobs, attach photos from the job site, track progress from scheduled to complete, and trigger a Google review request when you mark it done.', tag: 'With photo attachments' },
+              { title: 'Job Management', desc: 'Create jobs, attach photos from the job site, build a customizable checklist so nothing gets missed, track progress from scheduled to complete, and trigger a Google review request when you mark it done.', tag: 'With photo attachments' },
+              { title: 'Two-Way Client Texting', desc: "Text customers straight from their client profile using your own business number, and see their replies land right back in TradeDesk. No more juggling a separate phone for job updates.", tag: 'SMS-powered' },
               { title: 'Appointment Scheduling', desc: 'Book customer appointments, send automatic SMS reminders the day before, and view your full calendar. Never show up to a no-show because they forgot.', tag: 'SMS reminders' },
               { title: 'AI Profit Analyzer', desc: 'Connect your jobs, quotes, and invoices and let AI tell you your monthly revenue, average job value, collection rate, and exactly where you\'re leaving money on the table.', tag: 'Business intelligence' },
               { title: 'Crew Management', desc: 'Add your subcontractors and crew members with their trades, rates, and WSIB info. Get warned when someone\'s certificate is about to expire before you send them to a job.', tag: 'WSIB-aware' },
@@ -402,7 +405,7 @@ export default function LandingPage() {
                 Start Free Trial
               </Link>
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
-                {['Unlimited quotes + invoices', 'HST auto-calculated', 'WSIB tracking + reminders', 'Jobs + appointment scheduling', 'Stripe payment links', 'Client CRM', 'Receipt scanning + AI extraction', 'Crew + clearance cert tracking'].map(f => (
+                {['Unlimited quotes + invoices', 'HST auto-calculated', 'WSIB tracking + reminders', 'Jobs + appointment scheduling', 'Job checklists', 'Online payments, deposits + tips', 'Two-way client texting', 'Client CRM', 'Receipt scanning + AI extraction', 'Crew + clearance cert tracking'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '16px', height: '16px', background: '#16a34a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
