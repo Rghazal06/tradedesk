@@ -114,3 +114,8 @@ alter table quotes add column if not exists deposit_amount numeric;
 alter table quotes add column if not exists deposit_paid boolean not null default false;
 alter table invoices add column if not exists payment_token uuid;
 alter table invoices add column if not exists tip_amount numeric;
+
+-- -------------------------------------------------------
+-- Feature 12: Job checklists
+-- -------------------------------------------------------
+alter table jobs add column if not exists checklist jsonb default '[]';

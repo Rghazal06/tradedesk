@@ -17,10 +17,12 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string 
   cancelled:    { bg: '#fef2f2', color: '#991b1b', border: '#fecaca' },
 };
 
+interface ChecklistItem { id: string; text: string; done: boolean; }
 interface Job {
   id: string; title: string; customer_name: string; customer_phone: string;
   scheduled_date: string; scheduled_time?: string; estimated_hours?: number;
   status: string; notes: string; photos?: string[]; share_token?: string | null;
+  checklist?: ChecklistItem[];
 }
 interface JobReceipt { id: string; merchant: string; amount: number; date: string; category: string; }
 interface Quote { subtotal: number; total: number; status: string; }
@@ -44,6 +46,8 @@ export default function JobsPage() {
   const [showForm, setShowForm]   = useState(false);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [costingJobId, setCostingJobId]   = useState<string | null>(null);
+  const [checklistJobId, setChecklistJobId] = useState<string | null>(null);
+  const [newChecklistText, setNewChecklistText] = useState('');
   const [jobReceipts, setJobReceipts] = useState<Record<string, JobReceipt[]>>({});
   const [jobQuotes, setJobQuotes]     = useState<Record<string, Quote | null>>({});
   const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
@@ -163,6 +167,34 @@ export default function JobsPage() {
         setJobQuotes(prev => ({ ...prev, [jobId]: q?.[0] || null }));
       }
     }
+  }
+
+  // ─── Checklist ───────────────────────────────────────────
+  function toggleChecklist(jobId: string) {
+    setChecklistJobId(checklistJobId === jobId ? null : jobId);
+    setNewChecklistText('');
+  }
+
+  async function addChecklistItem(job: Job) {
+    const text = newChecklistText.trim();
+    if (!text) return;
+    const updated: ChecklistItem[] = [...(job.checklist || []), { id: crypto.randomUUID(), text, done: false }];
+    const { error } = await supabase.from('jobs').update({ checklist: updated }).eq('id', job.id).eq('user_id', userId);
+    if (error) { flash('Could not add checklist item.'); return; }
+    setJobs(current => current.map(j => j.id === job.id ? { ...j, checklist: updated } : j));
+    setNewChecklistText('');
+  }
+
+  async function toggleChecklistItem(job: Job, itemId: string) {
+    const updated = (job.checklist || []).map(item => item.id === itemId ? { ...item, done: !item.done } : item);
+    setJobs(current => current.map(j => j.id === job.id ? { ...j, checklist: updated } : j));
+    await supabase.from('jobs').update({ checklist: updated }).eq('id', job.id).eq('user_id', userId);
+  }
+
+  async function deleteChecklistItem(job: Job, itemId: string) {
+    const updated = (job.checklist || []).filter(item => item.id !== itemId);
+    setJobs(current => current.map(j => j.id === job.id ? { ...j, checklist: updated } : j));
+    await supabase.from('jobs').update({ checklist: updated }).eq('id', job.id).eq('user_id', userId);
   }
 
   // ─── Lightbox ────────────────────────────────────────────
@@ -545,7 +577,7 @@ export default function JobsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      {['Job', 'Customer', 'Date', 'Status', 'Photos', 'Costing', 'Actions'].map(h => (
+                      {['Job', 'Customer', 'Date', 'Status', 'Photos', 'Costing', 'Checklist', 'Actions'].map(h => (
                         <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
@@ -554,6 +586,9 @@ export default function JobsPage() {
                     {jobs.map(job => {
                       const ss = STATUS_STYLES[job.status] || { bg: '#f9fafb', color: '#6b7280', border: '#e5e7eb' };
                       const pc = job.photos?.length || 0;
+                      const checklist = job.checklist || [];
+                      const ccDone = checklist.filter(i => i.done).length;
+                      const isChecklist = checklistJobId === job.id;
                       const isExp  = expandedJobId === job.id;
                       const isCost = costingJobId  === job.id;
                       return (
@@ -598,6 +633,12 @@ export default function JobsPage() {
                               </button>
                             </td>
                             <td style={{ padding: '13px 16px' }}>
+                              <button onClick={() => toggleChecklist(job.id)}
+                                style={{ padding: '5px 10px', background: isChecklist ? '#f0fdf4' : '#f3f4f6', border: `1px solid ${isChecklist ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', color: isChecklist ? '#16a34a' : '#374151' }}>
+                                {checklist.length > 0 ? `${ccDone}/${checklist.length}` : 'Checklist'}
+                              </button>
+                            </td>
+                            <td style={{ padding: '13px 16px' }}>
                               <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                                 {job.status === 'scheduled' && (
                                   <button onClick={() => updateStatus(job.id, 'in progress')} style={{ padding: '5px 9px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start</button>
@@ -617,7 +658,7 @@ export default function JobsPage() {
                           {/* Photo Gallery Row */}
                           {isExp && (
                             <tr style={{ borderBottom: '1px solid #f9fafb' }}>
-                              <td colSpan={7} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                              <td colSpan={8} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
                                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Photos & Notes</span>
@@ -685,7 +726,7 @@ export default function JobsPage() {
                             const diff     = quoted != null ? spend - quoted : null;
                             return (
                               <tr style={{ borderBottom: '1px solid #f9fafb' }}>
-                                <td colSpan={7} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                                <td colSpan={8} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
                                   <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                       <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Costing</span>
@@ -742,6 +783,54 @@ export default function JobsPage() {
                               </tr>
                             );
                           })()}
+
+                          {/* Checklist Row */}
+                          {isChecklist && (
+                            <tr style={{ borderBottom: '1px solid #f9fafb' }}>
+                              <td colSpan={8} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Checklist</span>
+                                    {checklist.length > 0 && (
+                                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>{ccDone} of {checklist.length} complete</span>
+                                    )}
+                                  </div>
+
+                                  {checklist.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '28px 0', color: '#9ca3af' }}>
+                                      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style={{ margin: '0 auto 10px', display: 'block' }}><rect x="4" y="4" width="28" height="28" rx="4" stroke="#d1d5db" strokeWidth="1.5"/><path d="M11 18l5 5 9-10" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      <p style={{ margin: '0 0 3px', fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>No checklist items yet</p>
+                                      <p style={{ margin: 0, fontSize: '12px' }}>Add steps like "Turn off water main" or "Take before photos"</p>
+                                    </div>
+                                  ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '14px' }}>
+                                      {checklist.map(item => (
+                                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '6px' }}
+                                          onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+                                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                          <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(job, item.id)}
+                                            style={{ width: '16px', height: '16px', accentColor: '#16a34a', cursor: 'pointer', flexShrink: 0 }} />
+                                          <span style={{ flex: 1, fontSize: '13px', color: item.done ? '#9ca3af' : '#374151', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
+                                          <button onClick={() => deleteChecklistItem(job, item.id)} style={{ padding: '3px 7px', background: 'transparent', border: 'none', color: '#d1d5db', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <input
+                                      value={checklistJobId === job.id ? newChecklistText : ''}
+                                      onChange={e => setNewChecklistText(e.target.value)}
+                                      onKeyDown={e => { if (e.key === 'Enter') addChecklistItem(job); }}
+                                      placeholder="Add a checklist item..."
+                                      style={{ flex: 1, padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', color: '#111', background: '#f9fafb', outline: 'none', boxSizing: 'border-box' as const }}
+                                    />
+                                    <button onClick={() => addChecklistItem(job)} style={{ padding: '8px 16px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Add</button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
                         </React.Fragment>
                       );
                     })}

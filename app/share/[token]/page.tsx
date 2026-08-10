@@ -22,7 +22,7 @@ export default async function SharePage({
 
   const { data: job } = await supabase
     .from('jobs')
-    .select('id, title, customer_name, scheduled_date, status, notes, photos, user_id')
+    .select('id, title, customer_name, scheduled_date, status, notes, photos, checklist, user_id')
     .eq('share_token', token)
     .single();
 
@@ -36,6 +36,7 @@ export default async function SharePage({
 
   const contractorName = profile?.company_name || profile?.full_name || 'Your Contractor';
   const photos: string[] = job.photos || [];
+  const checklist: { id: string; text: string; done: boolean }[] = job.checklist || [];
   const sc = STATUS_COLORS[job.status] || { bg: '#f3f4f6', color: '#374151' };
   const jobDate = job.scheduled_date
     ? new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -87,6 +88,27 @@ export default async function SharePage({
           <div style={{ background: 'white', border: '1px solid #e5e7eb', borderLeft: '3px solid #16a34a', borderRadius: '0 12px 12px 0', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
             <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Notes</p>
             <p style={{ margin: 0, fontSize: '14px', color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-line' }}>{job.notes}</p>
+          </div>
+        )}
+
+        {/* Checklist */}
+        {checklist.length > 0 && (
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+            <p style={{ margin: '0 0 14px', fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Job Checklist ({checklist.filter(i => i.done).length}/{checklist.length})
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {checklist.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '7px 0' }}>
+                  <span style={{
+                    width: '16px', height: '16px', borderRadius: '4px', flexShrink: 0,
+                    background: item.done ? '#16a34a' : 'white', border: item.done ? 'none' : '1.5px solid #d1d5db',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '11px', fontWeight: 800,
+                  }}>{item.done ? '✓' : ''}</span>
+                  <span style={{ fontSize: '14px', color: item.done ? '#9ca3af' : '#374151', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

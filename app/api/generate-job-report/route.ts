@@ -115,6 +115,13 @@ export async function POST(req: NextRequest) {
   .badge-after  { background: #dbeafe; color: #1d4ed8; }
   .photo-caption { font-size: 12px; color: #6b7280; margin-top: 7px; line-height: 1.5; }
   .notes-box { background: #f9fafb; border: 1px solid #e5e7eb; border-left: 3px solid #16a34a; border-radius: 0 8px 8px 0; padding: 18px 20px; font-size: 14px; color: #374151; line-height: 1.8; white-space: pre-line; }
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+  .checklist li:last-child { border-bottom: none; }
+  .check-icon { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+  .check-done { background: #16a34a; color: white; }
+  .check-pending { background: white; border: 1.5px solid #d1d5db; }
+  .checklist li.done span.item-text { color: #9ca3af; text-decoration: line-through; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #f9fafb; padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
   td { padding: 10px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; }
@@ -185,6 +192,20 @@ export async function POST(req: NextRequest) {
   <div class="section">
     <div class="section-title">Job Notes</div>
     <div class="notes-box">${job.notes}</div>
+  </div>
+  ` : ''}
+
+  ${job.checklist && job.checklist.length > 0 ? `
+  <div class="section">
+    <div class="section-title">Job Checklist</div>
+    <ul class="checklist">
+      ${(job.checklist as { id: string; text: string; done: boolean }[]).map(item => `
+      <li class="${item.done ? 'done' : ''}">
+        <span class="check-icon ${item.done ? 'check-done' : 'check-pending'}">${item.done ? '✓' : ''}</span>
+        <span class="item-text">${item.text}</span>
+      </li>
+      `).join('')}
+    </ul>
   </div>
   ` : ''}
 
