@@ -13,8 +13,13 @@ type InvoiceRow = InvoiceDbRow & {
   total: number;
   status: string;
   created_at: string;
-  payment_link?: string | null;
+  payment_token?: string | null;
 };
+
+const getPayLink = (invoice: InvoiceRow) =>
+  invoice.payment_token && typeof window !== 'undefined'
+    ? `${window.location.origin}/pay?token=${invoice.payment_token}`
+    : '';
 
 
 const formatCurrency = (value: number) =>
@@ -44,7 +49,7 @@ export default function InvoicesPage() {
     if (authError || !authData.user) { setErrorMessage("Please sign in."); setLoading(false); return; }
     const { data, error } = await supabase
       .from("invoices")
-      .select("id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, payment_link")
+      .select("id, customer_name, customer_email, customer_phone, job_description, line_items, subtotal, hst, total, notes, status, created_at, payment_token")
       .eq("user_id", authData.user.id)
       .order("created_at", { ascending: false });
     if (error) { setErrorMessage('Could not load invoices. Please refresh.'); setLoading(false); return; }
@@ -65,21 +70,15 @@ export default function InvoicesPage() {
 
   const handleSendPaymentLink = async (invoice: InvoiceRow) => {
     setPaymentLinkLoadingId(invoice.id);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) { setErrorMessage("Please sign in."); setPaymentLinkLoadingId(null); return; }
-    try {
-      const response = await fetch("/api/create-payment-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ invoiceId: invoice.id, amount: invoice.total, customerEmail: invoice.customer_email ?? "" }),
-      });
-      const payload = await response.json() as { url?: string; error?: string };
-      if (!response.ok || !payload.url) { setErrorMessage(payload.error ?? "Could not create payment link."); setPaymentLinkLoadingId(null); return; }
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) { setPaymentLinkLoadingId(null); return; }
-      await supabase.from("invoices").update({ payment_link: payload.url }).eq("id", invoice.id).eq("user_id", userData.user.id);
-      setInvoices(current => current.map(inv => inv.id === invoice.id ? { ...inv, payment_link: payload.url } : inv));
-    } catch { setErrorMessage("Network error."); }
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) { setErrorMessage("Please sign in."); setPaymentLinkLoadingId(null); return; }
+    let token = invoice.payment_token;
+    if (!token) {
+      token = crypto.randomUUID();
+      const { error } = await supabase.from("invoices").update({ payment_token: token }).eq("id", invoice.id).eq("user_id", userData.user.id);
+      if (error) { setErrorMessage("Could not create payment link."); setPaymentLinkLoadingId(null); return; }
+    }
+    setInvoices(current => current.map(inv => inv.id === invoice.id ? { ...inv, payment_token: token } : inv));
     setPaymentLinkLoadingId(null);
   };
 
@@ -184,18 +183,18 @@ export default function InvoicesPage() {
                                   <button onClick={() => router.push(`/invoices/${invoice.id}/edit`)} style={{ padding: '6px 12px', background: '#f9fafb', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Edit</button>
                                   <button onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))} style={{ padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>PDF</button>
                                   {!isPaid && (<>
-                                    <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Creating...' : 'Payment Link'}</button>
+                                    <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '6px 12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Generating...' : 'Pay Link'}</button>
                                     <button disabled={markingPaidId === invoice.id} onClick={() => void handleMarkPaid(invoice.id)} style={{ padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: markingPaidId === invoice.id ? 0.6 : 1 }}>{markingPaidId === invoice.id ? 'Updating...' : 'Mark Paid'}</button>
-                                    <button onClick={async () => { const res = await fetch('/api/send-invoice-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerEmail: invoice.customer_email, customerName: invoice.customer_name, invoiceTotal: invoice.total?.toFixed(2), invoiceId: invoice.id, contractorName: 'TradeDesk Contractor', contractorPhone: '', paymentLink: invoice.payment_link || '' }) }); const data = await res.json(); if (data.success) { setCopyToast('Reminder sent to ' + invoice.customer_name); setTimeout(() => setCopyToast(null), 3000); } else setErrorMessage('Something went wrong. Please try again.'); }} style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Remind</button>
+                                    <button onClick={async () => { const res = await fetch('/api/send-invoice-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerEmail: invoice.customer_email, customerName: invoice.customer_name, invoiceTotal: invoice.total?.toFixed(2), invoiceId: invoice.id, contractorName: 'TradeDesk Contractor', contractorPhone: '', paymentLink: getPayLink(invoice) }) }); const data = await res.json(); if (data.success) { setCopyToast('Reminder sent to ' + invoice.customer_name); setTimeout(() => setCopyToast(null), 3000); } else setErrorMessage('Something went wrong. Please try again.'); }} style={{ padding: '6px 12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Remind</button>
                                   </>)}
                                   <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', opacity: deletingId === invoice.id ? 0.5 : 1 }}>Delete</button>
                                 </div>
-                                {!isPaid && invoice.payment_link && (
+                                {!isPaid && invoice.payment_token && (
                                   <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px' }}>
-                                    <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 6px' }}>Payment Link</p>
+                                    <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 6px' }}>Pay Link</p>
                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                      <input readOnly value={invoice.payment_link} style={{ flex: 1, padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', color: '#374151', background: 'white' }} />
-                                      <button onClick={() => void handleCopyPaymentLink(invoice.payment_link!)} style={{ padding: '6px 12px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>Copy</button>
+                                      <input readOnly value={getPayLink(invoice)} style={{ flex: 1, padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', color: '#374151', background: 'white' }} />
+                                      <button onClick={() => void handleCopyPaymentLink(getPayLink(invoice))} style={{ padding: '6px 12px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>Copy</button>
                                     </div>
                                   </div>
                                 )}
@@ -229,7 +228,7 @@ export default function InvoicesPage() {
                           <button onClick={() => generateInvoicePDF(invoiceRowToPdfData(invoice))} style={{ padding: '12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px' }}>Download PDF</button>
                           {!isPaid && <>
                             <button disabled={markingPaidId === invoice.id} onClick={() => void handleMarkPaid(invoice.id)} style={{ padding: '12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', minHeight: '52px', opacity: markingPaidId === invoice.id ? 0.6 : 1, gridColumn: 'span 2' }}>{markingPaidId === invoice.id ? 'Updating...' : 'Mark as Paid'}</button>
-                            <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Creating...' : 'Payment Link'}</button>
+                            <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Generating...' : 'Pay Link'}</button>
                             <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === invoice.id ? 0.5 : 1 }}>Delete</button>
                           </>}
                           {isPaid && <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === invoice.id ? 0.5 : 1, gridColumn: 'span 2' }}>Delete</button>}

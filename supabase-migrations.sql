@@ -101,3 +101,16 @@ alter table jobs add column if not exists photos text[] default '{}';
 -- notification with no actual credit applied.
 -- -------------------------------------------------------
 alter table profiles add column if not exists referral_reward_granted boolean not null default false;
+
+-- -------------------------------------------------------
+-- Feature 11: Quote deposits + invoice tips
+-- Deposits: contractor sets an optional deposit_amount on a quote; customer
+-- pays it via the portal before the quote counts as approved.
+-- Tips: customers can add a tip when paying an invoice through the new
+-- token-based /pay page (replaces raw Stripe Payment Links, which couldn't
+-- support a customer-chosen amount).
+-- -------------------------------------------------------
+alter table quotes add column if not exists deposit_amount numeric;
+alter table quotes add column if not exists deposit_paid boolean not null default false;
+alter table invoices add column if not exists payment_token uuid;
+alter table invoices add column if not exists tip_amount numeric;

@@ -44,7 +44,7 @@ export default function DashboardPage() {
 
     const [paidInvoices, unpaidInvs, activeJobsRes, quotesRes, recentQ, appts, wsib, profileRes] = await Promise.all([
       supabase.from('invoices').select('total, hst').eq('user_id', user.id).eq('status', 'paid').gte('created_at', firstOfMonth),
-      supabase.from('invoices').select('id, customer_name, total, created_at, payment_link').eq('user_id', user.id).eq('status', 'unpaid').order('created_at', { ascending: true }).limit(5),
+      supabase.from('invoices').select('id, customer_name, total, created_at').eq('user_id', user.id).eq('status', 'unpaid').order('created_at', { ascending: true }).limit(5),
       supabase.from('jobs').select('id').eq('user_id', user.id).in('status', ['scheduled', 'in progress']),
       supabase.from('quotes').select('id').eq('user_id', user.id).gte('created_at', firstOfMonth),
       supabase.from('quotes').select('id, customer_name, total, status, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),

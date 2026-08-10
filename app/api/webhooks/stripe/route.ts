@@ -76,23 +76,67 @@ async function handleCheckoutCompleted(stripe: Stripe, session: Stripe.Checkout.
   }
 
   if (session.mode === 'payment') {
-    const invoiceId = session.metadata?.invoice_id;
-    const userId = session.metadata?.user_id;
-    if (!invoiceId || !userId) return;
-
-    const { data: invoice } = await supabase
-      .from('invoices')
-      .select('id, status, customer_name, customer_phone')
-      .eq('id', invoiceId)
-      .eq('user_id', userId)
-      .single();
-
-    if (!invoice || invoice.status === 'paid') return;
-
-    await supabase.from('invoices').update({ status: 'paid' }).eq('id', invoiceId).eq('user_id', userId);
-
-    await sendReviewRequestIfPossible(userId, invoice.customer_name, invoice.customer_phone);
+    if (session.metadata?.kind === 'quote_deposit') {
+      await handleQuoteDepositPaid(session);
+      return;
+    }
+    // Default to invoice payment — also covers old-style Payment Links created
+    // before payment_token/metadata.kind existed (invoice_id + user_id only).
+    await handleInvoicePaid(session);
   }
+}
+
+async function handleQuoteDepositPaid(session: Stripe.Checkout.Session) {
+  const quoteId = session.metadata?.quote_id;
+  const userId = session.metadata?.user_id;
+  if (!quoteId || !userId) return;
+
+  const { data: quote } = await supabase
+    .from('quotes')
+    .select('id, approved, customer_name, deposit_amount')
+    .eq('id', quoteId)
+    .eq('user_id', userId)
+    .single();
+
+  if (!quote || quote.approved) return;
+
+  await supabase
+    .from('quotes')
+    .update({ approved: true, status: 'Approved', deposit_paid: true })
+    .eq('id', quoteId);
+
+  await supabase.from('notifications').insert({
+    user_id: userId,
+    title: 'Deposit Received',
+    message: `${quote.customer_name} paid a $${Number(quote.deposit_amount).toFixed(2)} deposit — the quote is now approved.`,
+    type: 'quote',
+    read: false,
+  });
+}
+
+async function handleInvoicePaid(session: Stripe.Checkout.Session) {
+  const invoiceId = session.metadata?.invoice_id;
+  const userId = session.metadata?.user_id;
+  if (!invoiceId || !userId) return;
+
+  const { data: invoice } = await supabase
+    .from('invoices')
+    .select('id, status, customer_name, customer_phone')
+    .eq('id', invoiceId)
+    .eq('user_id', userId)
+    .single();
+
+  if (!invoice || invoice.status === 'paid') return;
+
+  const tipAmount = Number(session.metadata?.tip_amount) || 0;
+
+  await supabase
+    .from('invoices')
+    .update({ status: 'paid', tip_amount: tipAmount > 0 ? tipAmount : null })
+    .eq('id', invoiceId)
+    .eq('user_id', userId);
+
+  await sendReviewRequestIfPossible(userId, invoice.customer_name, invoice.customer_phone);
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription, canceled: boolean) {

@@ -108,8 +108,8 @@ Every table has RLS enabled. Service role bypasses RLS — always filter by `use
 | Table | Key columns |
 |---|---|
 | `profiles` | id, full_name, company_name, email, phone, trade, logo_url, public_slug, is_public, bio, services (text[]), referral_code, referred_by, referral_count, referral_reward_granted (bool), google_review_link, booking_enabled, booking_window_days, booking_notice_hours, stripe_customer_id, subscription_status, subscription_plan, trial_ends_at |
-| `quotes` | id, user_id, customer_name, customer_email, customer_phone, customer_address, job_description, line_items (jsonb), subtotal, hst, total, status, notes, portal_token, approved (bool), created_at |
-| `invoices` | id, user_id, customer_name, customer_email, customer_phone, customer_address, line_items (jsonb), subtotal, hst, total, status, due_date, payment_link, notes, created_at |
+| `quotes` | id, user_id, customer_name, customer_email, customer_phone, customer_address, job_description, line_items (jsonb), subtotal, hst, total, status, notes, portal_token, approved (bool), deposit_amount, deposit_paid (bool), created_at |
+| `invoices` | id, user_id, customer_name, customer_email, customer_phone, customer_address, line_items (jsonb), subtotal, hst, total, status, due_date, payment_token, tip_amount, notes, created_at |
 | `jobs` | id, user_id, customer_name, title, status, scheduled_date, scheduled_time, estimated_hours, address, description, photos (text[]), voice_notes (text[]), created_at |
 | `wsib_entries` | id, user_id, contractor_name, certificate_number, expiry_date, status, notes, created_at |
 | `appointments` | id, user_id, customer_name, customer_email, customer_phone, title, description, scheduled_date, duration_minutes, status, address, created_at |
@@ -136,16 +136,17 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 ### Public pages (no auth)
 - `/` — Landing page (`app/page.tsx`) — server component, Jobber-style CSS-only nav with dropdowns, hero, features, pricing ($99/$199 CAD), footer
 - `/login`, `/signup` — Supabase auth
-- `/portal` — Client portal (`app/portal/page.tsx`) — token-based, shows all quotes + invoices + jobs for a customer. Tabs: Overview / Quotes / Invoices / Jobs. "Pay Now" buttons on invoices. Quote approval. Google review nudge.
+- `/portal?token=` — **Single-quote view only** (`app/portal/page.tsx`), token-based via `quotes.portal_token`. Shows one quote's line items + approve button, and now a deposit-payment step if `deposit_amount` is set. Still on Tailwind classes (predates the inline-styles-only rule) — a known inconsistency, not yet cleaned up. There is no unified multi-tab hub with Overview/Quotes/Invoices/Jobs and no `/api/portal/data` route — an earlier version of this doc described that and it never existed in the codebase.
+- `/pay?token=` — Public invoice pay page (`app/pay/page.tsx`), token-based via `invoices.payment_token`. Shows the invoice, lets the customer pick a tip (0/10/15/20%/custom), then redirects to a dynamically-created Stripe Checkout session. Replaces the old flow where the contractor generated a raw Stripe Payment Link via `/api/create-payment-link` (deleted — that route only supported a fixed amount, so it couldn't offer tipping).
 - `/book/[slug]` — Public contractor booking page
 - `/contractors/[slug]` — Public contractor profile
 - `/share/[id]` — Public AI-generated job report
 
 ### App pages (require auth, use Sidebar.tsx)
 - `/dashboard` — KPI cards, recent activity, quick actions
-- `/quotes` — List + create quotes. HST auto-calc. Edit + delete. Portal link generation.
+- `/quotes` — List + create quotes. HST auto-calc. Optional deposit amount. Edit + delete. Portal link generation.
 - `/quotes/edit/[id]` — Edit existing quote
-- `/invoices` — List + create invoices. Mark paid (triggers Google review SMS). Edit + delete.
+- `/invoices` — List + create invoices. Mark paid manually, or "Pay Link" generates a `/pay?token=` link customers can pay (+ optional tip) themselves, which auto-marks paid via webhook and fires the review SMS. Edit + delete.
 - `/invoices/edit/[id]` — Edit existing invoice
 - `/jobs` — Jobs list. Photo gallery + lightbox. Voice notes. AI report. Job costing panel with **profit bar** (gross profit, margin %, visual bar). Profit = `quote.total - receipt spend`.
 - `/appointments` — Calendar scheduling with status management
@@ -166,8 +167,10 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 ## API Routes
 
 ### Public (no auth)
-- `GET /api/portal/data?token=` — Returns all quotes + invoices + jobs for a customer by portal token
-- `POST /api/quotes/approve` — Approve a quote via portal token
+- `POST /api/quotes/approve` — Approve a quote via portal token (no deposit case)
+- `POST /api/quotes/create-deposit-checkout` — Looks up a quote by `portal_token`, creates a dynamic Stripe Checkout session for `deposit_amount`. Approval + `deposit_paid` are only set by the webhook once payment actually completes, not by this route.
+- `GET /api/invoices/by-token?token=` — Returns an invoice (+ contractor display name) by `payment_token`, for the `/pay` page
+- `POST /api/invoices/create-checkout` — Looks up an invoice by `payment_token`, creates a dynamic Stripe Checkout session for the invoice total plus an optional tip line item
 - `GET /api/booking/[slug]/availability` — Available booking slots
 - `POST /api/booking/[slug]/book` — Create a booking
 - `POST /api/leads/sms` — Twilio webhook, saves lead + sends AI auto-reply
@@ -179,12 +182,12 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 - `POST /api/ai-assistant` — AI chat (rate limited)
 - `POST /api/send-review-request` — Manually-triggered Google review request SMS (rate limited, 10/hr/user)
 - `POST /api/create-checkout` — Creates a Stripe subscription Checkout session for the authenticated user (sets `client_reference_id` + `metadata.plan` so the webhook can attribute the resulting event)
-- `POST /api/create-payment-link` — Creates a one-off Stripe Payment Link for a specific invoice (sets `metadata.invoice_id` + `metadata.user_id`, propagated by Stripe onto the resulting Checkout Session)
 
 ### Webhooks (Stripe signature auth, not getAuthUser)
 - `POST /api/webhooks/stripe` — The only place `profiles.subscription_status` is ever written. Handles:
   - `checkout.session.completed` (mode=`subscription`) → sets `subscription_status='active'`, `subscription_plan`, `stripe_customer_id`; also triggers the real referral credit (see Known Issues — previously fake)
-  - `checkout.session.completed` (mode=`payment`, i.e. an invoice payment link) → marks the invoice `paid` and fires the review-request SMS automatically (previously "Mark Paid" was 100% manual client-side with no Stripe verification at all — `/api/invoices/mark-paid` never existed despite being documented; invoices are still updatable manually from the UI for cash/e-transfer payments, that path is unchanged)
+  - `checkout.session.completed` (mode=`payment`, `metadata.kind==='quote_deposit'`) → sets `quotes.approved=true`, `deposit_paid=true`, notifies the contractor
+  - `checkout.session.completed` (mode=`payment`, default/`metadata.kind==='invoice_payment'`) → marks the invoice `paid`, stores `tip_amount` if any, fires the review-request SMS automatically. (Previously "Mark Paid" was 100% manual client-side with no Stripe verification at all — `/api/invoices/mark-paid` never existed despite being documented; invoices are still updatable manually from the UI for cash/e-transfer payments, that path is unchanged.)
   - `customer.subscription.updated` / `.deleted` → keeps `subscription_status` in sync with Stripe going forward (past_due, canceled, etc.)
 
 ### Cron (CRON_SECRET auth)
@@ -223,7 +226,7 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 4. **Resend domain** — Email sends from `noreply@mytradedesk.ca`. Already matches the live domain — no change needed.
 5. **App audit** (Task #47 in_progress) — Full audit of all app pages for UX/bug issues. Task #48 is implementing the fixes.
 6. **Stripe webhook is not yet registered in the Stripe Dashboard.** The code at `/api/webhooks/stripe` exists and is correct, but Stripe needs to be told to actually call it: in the Stripe Dashboard → Developers → Webhooks, add an endpoint at `https://mytradedesk.ca/api/webhooks/stripe` listening for `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`, then copy the generated signing secret into `STRIPE_WEBHOOK_SECRET` in Vercel. **Until this is done, subscriptions still won't activate and invoice payment links still won't auto-mark-paid** — the webhook code alone doesn't do anything without Stripe knowing to call it. Test with the Stripe CLI (`stripe listen --forward-to localhost:3000/api/webhooks/stripe`) before wiring the live endpoint.
-7. **No deposit collection on quotes, no tip collection on invoices, no batch invoicing, no job checklists, no recurring jobs, no time tracking/clock-in, no two-way texting for regular clients (only for missed-call leads), no drag-and-drop calendar, no QuickBooks/Zapier/Mailchimp integration, no route optimization.** These are the confirmed gaps against Jobber identified 2026-08-10 — tracked as an ongoing roadmap, not yet scheduled.
+7. **Remaining confirmed gaps against Jobber** (identified 2026-08-10, roadmap in progress): ~~deposit collection on quotes~~ and ~~tip collection on invoices~~ shipped 2026-08-10. Still missing: no batch invoicing, no job checklists, no recurring jobs, no time tracking/clock-in, no two-way texting for regular clients (only for missed-call leads), no drag-and-drop calendar, no QuickBooks/Zapier/Mailchimp integration, no route optimization.
 
 ---
 

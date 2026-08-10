@@ -1,14 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function PortalContent() {
   const searchParams = useSearchParams();
@@ -18,17 +12,15 @@ function PortalContent() {
   const [approving, setApproving] = useState(false);
   const [approved, setApproved] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [payingDeposit, setPayingDeposit] = useState(false);
+  const [depositError, setDepositError] = useState('');
 
   useEffect(() => { if (token) loadQuote(); else setNotFound(true); }, [token]);
 
   async function loadQuote() {
-    const { data, error } = await supabase
-      .from('quotes')
-      .select('*')
-      .eq('portal_token', token)
-      .single();
-
-    if (error || !data) { setNotFound(true); setLoading(false); return; }
+    const res = await fetch(`/api/quotes/by-token?token=${encodeURIComponent(token!)}`);
+    if (!res.ok) { setNotFound(true); setLoading(false); return; }
+    const { quote: data } = await res.json();
     setQuote(data);
     setApproved(data.approved || false);
     setLoading(false);
@@ -46,6 +38,29 @@ function PortalContent() {
       setApproved(true);
     }
     setApproving(false);
+  }
+
+  async function payDeposit() {
+    if (!token) return;
+    setPayingDeposit(true);
+    setDepositError('');
+    try {
+      const res = await fetch('/api/quotes/create-deposit-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setDepositError(data.error || 'Could not start payment.');
+        setPayingDeposit(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setDepositError('Network error. Please try again.');
+      setPayingDeposit(false);
+    }
   }
 
   if (loading) return (
@@ -83,7 +98,11 @@ function PortalContent() {
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{display:'inline-block'}}><circle cx="12" cy="12" r="10" fill="#dcfce7" stroke="#86efac" strokeWidth="1.5"/><path d="M8 12l3 3 5-5" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
             <h2 className="text-green-800 font-bold text-xl">Quote Approved!</h2>
-            <p className="text-green-600 mt-1">Thank you! The contractor will be in touch shortly.</p>
+            <p className="text-green-600 mt-1">
+              {quote?.deposit_amount > 0
+                ? `Thank you! Your deposit of $${Number(quote.deposit_amount).toFixed(2)} was received and the contractor will be in touch shortly.`
+                : 'Thank you! The contractor will be in touch shortly.'}
+            </p>
           </div>
         )}
 
@@ -136,7 +155,23 @@ function PortalContent() {
           </div>
         )}
 
-        {!approved && (
+        {!approved && quote?.deposit_amount > 0 && (
+          <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
+            <h2 className="font-bold text-gray-800 text-lg mb-2">Deposit Required</h2>
+            <p className="text-gray-600 text-sm mb-4">
+              A deposit of <strong>${Number(quote.deposit_amount).toFixed(2)}</strong> is required to approve this quote. You'll be redirected to a secure payment page.
+            </p>
+            {depositError && <p className="text-red-600 text-sm mb-3">{depositError}</p>}
+            <button
+              onClick={payDeposit}
+              disabled={payingDeposit}
+              className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-400 text-white rounded-2xl font-bold text-lg shadow-lg disabled:opacity-50 transition-all">
+              {payingDeposit ? 'Redirecting to payment...' : `Pay Deposit ($${Number(quote.deposit_amount).toFixed(2)}) & Approve`}
+            </button>
+          </div>
+        )}
+
+        {!approved && !(quote?.deposit_amount > 0) && (
           <button
             onClick={approveQuote}
             disabled={approving}

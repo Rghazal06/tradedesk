@@ -27,9 +27,18 @@ export async function GET(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!invoices || invoices.length === 0) return NextResponse.json({ message: 'No overdue invoices', sent: 0 });
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mytradedesk.ca';
     let sent = 0;
     for (const invoice of invoices) {
       if (!invoice.customer_email) continue;
+
+      let paymentToken = invoice.payment_token;
+      if (!paymentToken) {
+        paymentToken = crypto.randomUUID();
+        await supabase.from('invoices').update({ payment_token: paymentToken }).eq('id', invoice.id);
+      }
+      const payLink = `${appUrl}/pay?token=${paymentToken}`;
+
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'TradeDesk <onboarding@resend.dev>',
         to: invoice.customer_email,
@@ -46,7 +55,7 @@ export async function GET(req: NextRequest) {
                 <p style="color: #6b7280; margin: 0 0 8px;">Amount Due</p>
                 <p style="color: #16a34a; font-size: 40px; font-weight: 800; margin: 0;">$${invoice.total?.toFixed(2)}</p>
               </div>
-              ${invoice.payment_link ? `<div style="text-align: center;"><a href="${invoice.payment_link}" style="background: #16a34a; color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: 700;">Pay Now →</a></div>` : ''}
+              <div style="text-align: center;"><a href="${payLink}" style="background: #16a34a; color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: 700;">Pay Now →</a></div>
               <p style="color: #6b7280; font-size: 13px; text-align: center; margin-top: 24px;">Sent via TradeDesk</p>
             </div>
           </div>

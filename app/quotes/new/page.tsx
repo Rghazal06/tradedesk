@@ -52,6 +52,7 @@ export default function NewQuotePage() {
   const [jobDescription, setJobDescription] = useState("");
   const [quoteNotes, setQuoteNotes] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([createEmptyLineItem(1)]);
+  const [depositAmount, setDepositAmount] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [tradeType, setTradeType] = useState('');
@@ -139,7 +140,8 @@ export default function NewQuotePage() {
     const user = authData.user;
     if (authError || !user) { setIsSaving(false); router.push("/login"); return; }
     const normalizedLineItems = lineItems.map(item => ({ description: item.description, quantity: toNumber(item.quantity), unit_price: toNumber(item.unitPrice), total: lineItemTotal(item) }));
-    const { error } = await supabase.from("quotes").insert({ user_id: user.id, customer_name: customerName, customer_email: customerEmail, customer_phone: customerPhone, job_description: jobDescription, line_items: normalizedLineItems, subtotal, hst, total, notes: quoteNotes, status: "Draft" });
+    const depositValue = depositAmount.trim() ? toNumber(depositAmount) : null;
+    const { error } = await supabase.from("quotes").insert({ user_id: user.id, customer_name: customerName, customer_email: customerEmail, customer_phone: customerPhone, job_description: jobDescription, line_items: normalizedLineItems, subtotal, hst, total, notes: quoteNotes, status: "Draft", deposit_amount: depositValue });
     if (error) { setErrorMessage('Something went wrong. Please try again.'); setIsSaving(false); return; }
     setSuccessMessage("Quote saved! Redirecting...");
     setIsSaving(false);
@@ -326,6 +328,16 @@ export default function NewQuotePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e5e7eb', paddingTop: '10px', fontSize: '16px', fontWeight: '800', color: '#111' }}>
                 <span>Total (CAD)</span><span style={{ color: '#16a34a' }}>{formatCurrency(total)}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Deposit */}
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 6px' }}>Deposit (optional)</h2>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px' }}>If set, the customer must pay this amount before the quote counts as approved.</p>
+            <div style={{ maxWidth: '220px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deposit Amount (CAD)</label>
+              <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} type="number" min="0" step="0.01" placeholder="e.g. 100.00" style={inputStyle} />
             </div>
           </div>
 
