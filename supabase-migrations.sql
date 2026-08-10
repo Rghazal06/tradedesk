@@ -93,3 +93,11 @@ alter table jobs add column if not exists photos text[] default '{}';
 -- Notifications table: add quote_request type if not exists
 -- (no schema change needed — type is a text field)
 -- -------------------------------------------------------
+
+-- -------------------------------------------------------
+-- Feature 10: Real Stripe webhook + referral credit tracking
+-- Fixes: subscription_status was never set to 'active' anywhere
+-- (no webhook existed), and referrals showed a fake "1 month free"
+-- notification with no actual credit applied.
+-- -------------------------------------------------------
+alter table profiles add column if not exists referral_reward_granted boolean not null default false;
