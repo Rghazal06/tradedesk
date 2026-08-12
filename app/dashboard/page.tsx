@@ -112,18 +112,18 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* Greeting */}
-              <div style={{ marginBottom: '28px' }}>
-                <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#0a0a0a', margin: '0 0 2px', letterSpacing: '-0.8px' }}>
+              <div style={{ marginBottom: '32px' }}>
+                <h1 style={{ fontSize: '30px', fontWeight: '800', color: '#0a0a0a', margin: '0 0 4px', letterSpacing: '-1px' }}>
                   {greeting}{userName ? `, ${userName}` : ''}.
                 </h1>
-                <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
+                <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
                   {todayAppts.length > 0 ? `You have ${todayAppts.length} appointment${todayAppts.length > 1 ? 's' : ''} today.` : metrics.unpaid > 0 ? `${metrics.unpaid} invoice${metrics.unpaid > 1 ? 's' : ''} waiting on payment.` : 'Everything looks good.'}
                 </p>
               </div>
 
               {/* Getting Started card */}
               {!onboardingDismissed && onboardingSteps.length < TOTAL_STEPS && (
-                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '18px 20px', marginBottom: '24px' }}>
+                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px 22px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
@@ -196,15 +196,28 @@ export default function DashboardPage() {
               })()}
 
               {/* KPI cards */}
-              <div className="dash-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+              <div className="dash-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>
                 {[
-                  { label: 'Revenue', sub: 'this month', value: `$${metrics.revenue.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: '↑' },
-                  { label: 'HST Collected', sub: 'from paid invoices', value: `$${metrics.hst.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', icon: null },
-                  { label: 'Unpaid', sub: 'invoices outstanding', value: metrics.unpaid.toString(), color: metrics.unpaid > 0 ? '#dc2626' : '#6b7280', bg: metrics.unpaid > 0 ? '#fef2f2' : 'white', border: metrics.unpaid > 0 ? '#fecaca' : '#e5e7eb', icon: null },
-                  { label: 'Active Jobs', sub: 'in progress', value: metrics.activeJobs.toString(), color: '#0a0a0a', bg: 'white', border: '#e5e7eb', icon: null },
+                  { label: 'Revenue', sub: 'this month', value: `$${metrics.revenue.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 9l4-4 3 3 4-5" stroke="#16a34a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 3h3v3" stroke="#16a34a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  ) },
+                  { label: 'HST Collected', sub: 'from paid invoices', value: `$${metrics.hst.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', icon: (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="#2563eb" strokeWidth="1.4"/><line x1="4" y1="5.5" x2="10" y2="5.5" stroke="#2563eb" strokeWidth="1.2" strokeLinecap="round"/><line x1="4" y1="8" x2="8" y2="8" stroke="#2563eb" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  ) },
+                  { label: 'Unpaid', sub: 'invoices outstanding', value: metrics.unpaid.toString(), color: metrics.unpaid > 0 ? '#dc2626' : '#6b7280', bg: metrics.unpaid > 0 ? '#fef2f2' : 'white', border: metrics.unpaid > 0 ? '#fecaca' : '#e5e7eb', icon: (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke={metrics.unpaid > 0 ? '#dc2626' : '#9ca3af'} strokeWidth="1.4"/><line x1="7" y1="4" x2="7" y2="7.5" stroke={metrics.unpaid > 0 ? '#dc2626' : '#9ca3af'} strokeWidth="1.4" strokeLinecap="round"/><circle cx="7" cy="10" r="0.7" fill={metrics.unpaid > 0 ? '#dc2626' : '#9ca3af'}/></svg>
+                  ) },
+                  { label: 'Active Jobs', sub: 'in progress', value: metrics.activeJobs.toString(), color: '#0a0a0a', bg: 'white', border: '#e5e7eb', icon: (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4V2.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V4" stroke="#374151" strokeWidth="1.4" strokeLinecap="round"/><rect x="1.5" y="4" width="11" height="8" rx="1.5" stroke="#374151" strokeWidth="1.4"/></svg>
+                  ) },
                 ].map(m => (
-                  <div key={m.label} style={{ background: m.bg, border: `1px solid ${m.border}`, borderRadius: '12px', padding: '20px 22px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.7px', margin: '0 0 10px' }}>{m.label}</p>
+                  <div key={m.label} style={{ background: m.bg, border: `1px solid ${m.border}`, borderRadius: '12px', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '7px', background: 'rgba(255,255,255,0.6)', border: `1px solid ${m.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {m.icon}
+                      </div>
+                      <p style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.7px', margin: 0 }}>{m.label}</p>
+                    </div>
                     <p style={{ fontSize: '36px', fontWeight: '800', color: m.color, margin: '0 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>{m.value}</p>
                     <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{m.sub}</p>
                   </div>
@@ -215,7 +228,7 @@ export default function DashboardPage() {
               <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' }}>
 
                 {/* Recent quotes */}
-                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Recent Quotes</span>
                     <a href="/quotes" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '500' }}>View all</a>
@@ -259,7 +272,7 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
                   {/* Today's appointments */}
-                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Today</span>
                       <a href="/appointments" style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'none', fontWeight: '500' }}>Schedule</a>
@@ -286,7 +299,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Quick actions */}
-                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6' }}>
                       <span style={{ fontSize: '13px', fontWeight: '700', color: '#0a0a0a' }}>Quick Actions</span>
                     </div>

@@ -6,10 +6,13 @@ export default function LandingPage() {
   return (
     <div style={{ fontFamily: FF, background: '#ffffff', color: '#111' }}>
       <style>{`
+        @media (max-width: 920px) {
+          .td-lp-nav { padding: 0 24px !important; }
+          .td-nav-links { display: none !important; }
+        }
         @media (max-width: 768px) {
           .td-lp-announce { padding: 8px 16px !important; font-size: 12px !important; flex-direction: column !important; gap: 2px !important; }
           .td-lp-nav { padding: 0 16px !important; height: 60px !important; }
-          .td-nav-links { display: none !important; }
           .td-hero { grid-template-columns: 1fr !important; padding: 48px 20px 40px !important; gap: 0 !important; }
           .td-h1 { font-size: 34px !important; letter-spacing: -1.5px !important; }
           .td-hero-visual { display: none !important; }
