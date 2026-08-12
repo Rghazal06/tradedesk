@@ -4,7 +4,19 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-function PortalContent() {
+const FF = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+const pageStyle: React.CSSProperties = {
+  minHeight: '100vh', background: '#f8fafc', fontFamily: FF, padding: '48px 16px',
+};
+const cardStyle: React.CSSProperties = {
+  background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '16px',
+};
+const centeredStyle: React.CSSProperties = {
+  minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FF, color: '#6b7280',
+};
+
+function PortalContent(): React.JSX.Element {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [quote, setQuote] = useState<any>(null);
@@ -63,110 +75,112 @@ function PortalContent() {
     }
   }
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-gray-500 text-lg">Loading your quote...</div>
-    </div>
-  );
+  const formatCurrency = (value: number) =>
+    (value ?? 0).toLocaleString('en-CA', { style: 'currency', currency: 'CAD' });
+
+  if (loading) return <div style={centeredStyle}>Loading your quote...</div>;
 
   if (notFound) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Quote Not Found</h1>
-        <p className="text-gray-500">This link may have expired or is invalid.</p>
+    <div style={centeredStyle}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: '0 0 8px' }}>Quote Not Found</h1>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>This link may have expired or is invalid.</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-2xl p-8 mb-6 text-white">
-          <div className="flex items-center justify-between mb-6">
-            <div className="bg-white/20 rounded-xl px-4 py-2">
-              <span className="font-bold text-lg">TradeDesk</span>
+    <div style={pageStyle}>
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ background: '#16a34a', borderRadius: '12px', padding: '28px', marginBottom: '16px', color: 'white' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '8px', padding: '6px 14px' }}>
+              <span style={{ fontWeight: '700', fontSize: '15px' }}>TradeDesk</span>
             </div>
-            <span className="text-blue-200 text-sm">Customer Quote Portal</span>
+            <span style={{ color: '#dcfce7', fontSize: '13px' }}>Customer Quote Portal</span>
           </div>
-          <h1 className="text-3xl font-bold mb-1">Hi, {quote?.customer_name}!</h1>
-          <p className="text-blue-200">Here's your quote. Review it and approve when ready.</p>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px' }}>Hi, {quote?.customer_name}!</h1>
+          <p style={{ color: '#dcfce7', margin: 0, fontSize: '14px' }}>Here's your quote. Review it and approve when ready.</p>
         </div>
 
         {approved && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-6 text-center">
-            <div className="text-green-600 mb-2">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{display:'inline-block'}}><circle cx="12" cy="12" r="10" fill="#dcfce7" stroke="#86efac" strokeWidth="1.5"/><path d="M8 12l3 3 5-5" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
-            <h2 className="text-green-800 font-bold text-xl">Quote Approved!</h2>
-            <p className="text-green-600 mt-1">
+          <div style={{ ...cardStyle, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{ display: 'block', margin: '0 auto 8px' }}><circle cx="12" cy="12" r="10" fill="#dcfce7" stroke="#86efac" strokeWidth="1.5"/><path d="M8 12l3 3 5-5" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <h2 style={{ color: '#15803d', fontWeight: '800', fontSize: '18px', margin: '0 0 4px' }}>Quote Approved!</h2>
+            <p style={{ color: '#16a34a', margin: 0, fontSize: '13px' }}>
               {quote?.deposit_amount > 0
-                ? `Thank you! Your deposit of $${Number(quote.deposit_amount).toFixed(2)} was received and the contractor will be in touch shortly.`
+                ? `Thank you! Your deposit of ${formatCurrency(Number(quote.deposit_amount))} was received and the contractor will be in touch shortly.`
                 : 'Thank you! The contractor will be in touch shortly.'}
             </p>
           </div>
         )}
 
         {quote?.job_description && (
-          <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-            <h2 className="font-bold text-gray-800 text-lg mb-2">Job Description</h2>
-            <p className="text-gray-600">{quote.job_description}</p>
+          <div style={cardStyle}>
+            <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 8px' }}>Job Description</h2>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '14px', lineHeight: 1.6 }}>{quote.job_description}</p>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-          <h2 className="font-bold text-gray-800 text-lg mb-4">Quote Details</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left py-2 text-gray-500 font-medium">Description</th>
-                <th className="text-center py-2 text-gray-500 font-medium">Qty</th>
-                <th className="text-right py-2 text-gray-500 font-medium">Unit Price</th>
-                <th className="text-right py-2 text-gray-500 font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quote?.line_items?.map((item: any, i: number) => (
-                <tr key={i} className="border-b border-gray-50">
-                  <td className="py-3 text-gray-800">{item.description}</td>
-                  <td className="py-3 text-center text-gray-600">{item.quantity}</td>
-                  <td className="py-3 text-right text-gray-600">${Number(item.unit_price).toFixed(2)}</td>
-                  <td className="py-3 text-right text-gray-800 font-medium">${Number(item.total || item.quantity * item.unit_price).toFixed(2)}</td>
+        <div style={cardStyle}>
+          <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 16px' }}>Quote Details</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <th style={{ textAlign: 'left', padding: '6px 0', color: '#6b7280', fontWeight: '600' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '6px 0', color: '#6b7280', fontWeight: '600' }}>Qty</th>
+                  <th style={{ textAlign: 'right', padding: '6px 0', color: '#6b7280', fontWeight: '600' }}>Unit Price</th>
+                  <th style={{ textAlign: 'right', padding: '6px 0', color: '#6b7280', fontWeight: '600' }}>Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-            <div className="flex justify-between text-gray-600 text-sm">
-              <span>Subtotal</span><span>${Number(quote?.subtotal).toFixed(2)}</span>
+              </thead>
+              <tbody>
+                {quote?.line_items?.map((item: any, i: number) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f9fafb' }}>
+                    <td style={{ padding: '10px 0', color: '#111' }}>{item.description}</td>
+                    <td style={{ padding: '10px 0', textAlign: 'center', color: '#6b7280' }}>{item.quantity}</td>
+                    <td style={{ padding: '10px 0', textAlign: 'right', color: '#6b7280' }}>{formatCurrency(Number(item.unit_price))}</td>
+                    <td style={{ padding: '10px 0', textAlign: 'right', color: '#111', fontWeight: '600' }}>{formatCurrency(Number(item.total || item.quantity * item.unit_price))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#6b7280', marginBottom: '6px' }}>
+              <span>Subtotal</span><span>{formatCurrency(Number(quote?.subtotal))}</span>
             </div>
-            <div className="flex justify-between text-gray-600 text-sm">
-              <span>HST (13%)</span><span>${Number(quote?.hst).toFixed(2)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#6b7280', marginBottom: '6px' }}>
+              <span>HST (13%)</span><span>{formatCurrency(Number(quote?.hst))}</span>
             </div>
-            <div className="flex justify-between text-gray-800 font-bold text-xl pt-2 border-t border-gray-200">
-              <span>Total (CAD)</span><span>${Number(quote?.total).toFixed(2)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: '800', color: '#111', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+              <span>Total (CAD)</span><span>{formatCurrency(Number(quote?.total))}</span>
             </div>
           </div>
         </div>
 
         {quote?.notes && (
-          <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-            <h2 className="font-bold text-gray-800 text-lg mb-2">Notes & Terms</h2>
-            <p className="text-gray-600 text-sm">{quote.notes}</p>
+          <div style={cardStyle}>
+            <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 8px' }}>Notes &amp; Terms</h2>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '13px', lineHeight: 1.6 }}>{quote.notes}</p>
           </div>
         )}
 
         {!approved && quote?.deposit_amount > 0 && (
-          <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-            <h2 className="font-bold text-gray-800 text-lg mb-2">Deposit Required</h2>
-            <p className="text-gray-600 text-sm mb-4">
-              A deposit of <strong>${Number(quote.deposit_amount).toFixed(2)}</strong> is required to approve this quote. You'll be redirected to a secure payment page.
+          <div style={cardStyle}>
+            <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 8px' }}>Deposit Required</h2>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 16px', lineHeight: 1.6 }}>
+              A deposit of <strong>{formatCurrency(Number(quote.deposit_amount))}</strong> is required to approve this quote. You'll be redirected to a secure payment page.
             </p>
-            {depositError && <p className="text-red-600 text-sm mb-3">{depositError}</p>}
+            {depositError && <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '12px' }}>{depositError}</p>}
             <button
               onClick={payDeposit}
               disabled={payingDeposit}
-              className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-400 text-white rounded-2xl font-bold text-lg shadow-lg disabled:opacity-50 transition-all">
-              {payingDeposit ? 'Redirecting to payment...' : `Pay Deposit ($${Number(quote.deposit_amount).toFixed(2)}) & Approve`}
+              style={{
+                width: '100%', padding: '16px', background: '#16a34a', color: 'white', border: 'none',
+                borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: payingDeposit ? 0.7 : 1,
+              }}>
+              {payingDeposit ? 'Redirecting to payment...' : `Pay Deposit (${formatCurrency(Number(quote.deposit_amount))}) & Approve`}
             </button>
           </div>
         )}
@@ -175,12 +189,15 @@ function PortalContent() {
           <button
             onClick={approveQuote}
             disabled={approving}
-            className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-400 text-white rounded-2xl font-bold text-lg shadow-lg disabled:opacity-50 transition-all">
+            style={{
+              width: '100%', padding: '16px', background: '#16a34a', color: 'white', border: 'none',
+              borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: approving ? 0.7 : 1,
+            }}>
             {approving ? 'Approving...' : 'Approve This Quote'}
           </button>
         )}
 
-        <p className="text-center text-gray-400 text-xs mt-6">
+        <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px', marginTop: '20px' }}>
           Powered by TradeDesk — Business software for Ontario contractors
         </p>
       </div>
@@ -188,9 +205,9 @@ function PortalContent() {
   );
 }
 
-export default function PortalPage() {
+export default function PortalPage(): React.JSX.Element {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>}>
+    <Suspense fallback={<div style={centeredStyle}>Loading...</div>}>
       <PortalContent />
     </Suspense>
   );

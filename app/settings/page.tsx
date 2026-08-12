@@ -31,6 +31,7 @@ function SettingsContent() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(!!upgradeParam);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageIsError, setMessageIsError] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [referralCount, setReferralCount] = useState(0);
   const [profile, setProfile] = useState({
@@ -95,10 +96,18 @@ function SettingsContent() {
       booking_notice_hours: profile.booking_notice_hours,
       booking_slot_minutes: profile.booking_slot_minutes,
     });
-    if (error) setMessage('Something went wrong. Please try again.');
-    else setMessage('Settings saved successfully!');
+    setMessageIsError(!!error);
+    if (error) {
+      if (error.code === '23505' && error.message?.includes('public_slug')) {
+        setMessage('That profile URL is already taken by another contractor — please choose a different one. No other changes on this page were saved.');
+      } else {
+        setMessage('Something went wrong and your changes were not saved. Please try again.');
+      }
+    } else {
+      setMessage('Settings saved successfully!');
+    }
     setSaving(false);
-    setTimeout(() => setMessage(''), 3000);
+    setTimeout(() => setMessage(''), error ? 6000 : 3000);
   }
 
   const sectionStyle = {
@@ -144,8 +153,10 @@ function SettingsContent() {
         <div className="set-body" style={{ padding: '32px', overflowY: 'auto', flex: 1, maxWidth: '800px' }}>
 
           {message && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
-              ✓ {message}
+            <div style={messageIsError
+              ? { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#991b1b', fontSize: '14px' }
+              : { background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#15803d', fontSize: '14px' }}>
+              {messageIsError ? message : `✓ ${message}`}
             </div>
           )}
 

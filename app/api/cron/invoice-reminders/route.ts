@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('status', 'unpaid')
       .lte('created_at', sevenDaysAgo.toISOString())
-      .not('customer_email', 'is', null);
+      .not('customer_email', 'is', null)
+      .or(`last_reminder_sent_at.is.null,last_reminder_sent_at.lte.${sevenDaysAgo.toISOString()}`);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!invoices || invoices.length === 0) return NextResponse.json({ message: 'No overdue invoices', sent: 0 });
@@ -61,6 +62,8 @@ export async function GET(req: NextRequest) {
           </div>
         `,
       });
+
+      await supabase.from('invoices').update({ last_reminder_sent_at: new Date().toISOString() }).eq('id', invoice.id);
       sent++;
     }
 

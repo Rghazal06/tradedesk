@@ -121,6 +121,14 @@ alter table invoices add column if not exists tip_amount numeric;
 alter table jobs add column if not exists checklist jsonb default '[]';
 
 -- -------------------------------------------------------
+-- Feature 14: Stop invoice reminders from re-sending every single day
+-- Previously /api/cron/invoice-reminders had no tracking column, so once
+-- an unpaid invoice crossed 7 days old it got re-emailed on every daily
+-- cron run forever. Now it only re-sends once a week after the first one.
+-- -------------------------------------------------------
+alter table invoices add column if not exists last_reminder_sent_at timestamp with time zone;
+
+-- -------------------------------------------------------
 -- Feature 13: Two-way texting for existing clients
 -- Separate from sms_leads (missed-call AI qualification bot).
 -- Contractor-initiated conversations with known customers, sent from
