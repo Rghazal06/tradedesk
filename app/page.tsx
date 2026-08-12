@@ -7,7 +7,8 @@ export default function LandingPage() {
     <div style={{ fontFamily: FF, background: '#ffffff', color: '#111' }}>
       <style>{`
         @media (max-width: 768px) {
-          .td-lp-nav { padding: 0 16px !important; }
+          .td-lp-announce { padding: 8px 16px !important; font-size: 12px !important; flex-direction: column !important; gap: 2px !important; }
+          .td-lp-nav { padding: 0 16px !important; height: 60px !important; }
           .td-nav-links { display: none !important; }
           .td-hero { grid-template-columns: 1fr !important; padding: 48px 20px 40px !important; gap: 0 !important; }
           .td-h1 { font-size: 34px !important; letter-spacing: -1.5px !important; }
@@ -21,25 +22,32 @@ export default function LandingPage() {
           .td-pricing-grid { grid-template-columns: 1fr !important; max-width: 100% !important; }
           .td-h2 { font-size: 26px !important; letter-spacing: -0.5px !important; }
           .td-cta-h2 { font-size: 30px !important; letter-spacing: -1px !important; line-height: 1.15 !important; }
+          .td-footer-grid { grid-template-columns: 1fr 1fr !important; padding: 0 20px !important; }
           .td-footer-inner { padding: 24px 20px !important; flex-direction: column !important; text-align: center !important; }
         }
       `}</style>
 
+      {/* Announcement bar */}
+      <div className="td-lp-announce" style={{ background: '#0a0a0a', color: 'white', padding: '9px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', fontWeight: '500' }}>
+        <span>🎉 New: two-way client texting, job checklists, deposits &amp; tips are live.</span>
+        <a href="#features" style={{ color: '#4ade80', fontWeight: '700', textDecoration: 'none' }}>See what's new →</a>
+      </div>
+
       {/* Navbar */}
-      <nav className="td-lp-nav" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #e5e7eb', padding: '0 48px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav className="td-lp-nav" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #e5e7eb', padding: '0 64px', height: '76px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
-          <span style={{ fontWeight: '800', fontSize: '17px', letterSpacing: '-0.3px' }}>TradeDesk</span>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#0a0a0a"/><rect x="2" y="18" width="20" height="4" fill="#0a0a0a"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
+          <span style={{ fontWeight: '800', fontSize: '18px', letterSpacing: '-0.3px' }}>TradeDesk</span>
         </div>
-        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-          <div className="td-nav-links" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-            <a href="#why-ontario" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Why Ontario</a>
-            <a href="#features" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Features</a>
-            <a href="#pricing" style={{ color: '#6b7280', fontSize: '14px', textDecoration: 'none', fontWeight: '500' }}>Pricing</a>
+        <div style={{ display: 'flex', gap: '44px', alignItems: 'center' }}>
+          <div className="td-nav-links" style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
+            <a href="#why-ontario" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Why Ontario</a>
+            <a href="#features" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Features</a>
+            <a href="#pricing" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Pricing</a>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
             <Link href="/login" style={{ color: '#374151', fontSize: '14px', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
-            <Link href="/signup" style={{ padding: '8px 18px', background: '#16a34a', color: 'white', borderRadius: '6px', fontSize: '14px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 2px 8px rgba(22,163,74,0.3)' }}>
+            <Link href="/signup" style={{ padding: '11px 24px', background: '#16a34a', color: 'white', borderRadius: '8px', fontSize: '14px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 2px 10px rgba(22,163,74,0.35)' }}>
               Start Free Trial
             </Link>
           </div>
@@ -495,17 +503,49 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ background: '#0a0a0a', borderTop: '1px solid #1f2937', padding: '40px 48px' }}>
-        <div className="td-footer-inner" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
-            <span style={{ fontWeight: '700', color: 'white', fontSize: '15px' }}>TradeDesk</span>
+      <footer style={{ background: '#0a0a0a', borderTop: '1px solid #1f2937', padding: '64px 48px 32px' }}>
+        <div className="td-footer-grid" style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: '32px', marginBottom: '48px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="4" height="16" fill="#ffffff"/><rect x="2" y="18" width="20" height="4" fill="#ffffff"/><rect x="6" y="18" width="4" height="4" fill="#16a34a"/></svg>
+              <span style={{ fontWeight: '700', color: 'white', fontSize: '15px' }}>TradeDesk</span>
+            </div>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: 0, lineHeight: 1.6, maxWidth: '260px' }}>Built for Ontario contractors. WSIB + HST + Canadian data. Priced in CAD.</p>
           </div>
-          <p style={{ color: '#4b5563', fontSize: '13px', margin: 0 }}>Built for Ontario contractors. WSIB + HST + Canadian data. Priced in CAD.</p>
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <Link href="/login" style={{ color: '#6b7280', fontSize: '13px', textDecoration: 'none' }}>Sign in</Link>
-            <Link href="/signup" style={{ color: '#6b7280', fontSize: '13px', textDecoration: 'none' }}>Sign up</Link>
+
+          <div>
+            <p style={{ color: '#9ca3af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.6px', margin: '0 0 16px' }}>Features</p>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '11px' }}>
+              <a href="#features" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Quotes &amp; Invoices</a>
+              <a href="#features" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Jobs &amp; Checklists</a>
+              <a href="#features" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Client Portal &amp; Payments</a>
+              <a href="#features" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Two-Way Texting</a>
+              <a href="#features" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>WSIB Tracking</a>
+              <a href="#features" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>AI Assistant</a>
+            </div>
           </div>
+
+          <div>
+            <p style={{ color: '#9ca3af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.6px', margin: '0 0 16px' }}>Company</p>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '11px' }}>
+              <a href="#why-ontario" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Why Ontario</a>
+              <a href="#pricing" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Pricing</a>
+              <a href="mailto:rayanghazal06@gmail.com" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Contact</a>
+            </div>
+          </div>
+
+          <div>
+            <p style={{ color: '#9ca3af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.6px', margin: '0 0 16px' }}>Get Started</p>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '11px' }}>
+              <Link href="/signup" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Start Free Trial</Link>
+              <Link href="/login" style={{ color: '#d1d5db', fontSize: '13px', textDecoration: 'none' }}>Sign In</Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="td-footer-inner" style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '24px', borderTop: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '12px' }}>
+          <p style={{ color: '#4b5563', fontSize: '12px', margin: 0 }}>© 2026 TradeDesk. All rights reserved.</p>
+          <p style={{ color: '#4b5563', fontSize: '12px', margin: 0 }}>Made in Ontario, for Ontario.</p>
         </div>
       </footer>
 
