@@ -26,6 +26,8 @@ interface Job {
 }
 interface JobReceipt { id: string; merchant: string; amount: number; date: string; category: string; }
 interface Quote { subtotal: number; total: number; status: string; }
+interface TimeEntry { id: string; job_id: string; crew_id: string | null; clock_in: string; clock_out: string | null; }
+interface CrewMember { id: string; name: string; hourly_rate: number | null; rate_type: string | null; }
 
 export default function JobsPage() {
   const router = useRouter();
@@ -48,6 +50,11 @@ export default function JobsPage() {
   const [costingJobId, setCostingJobId]   = useState<string | null>(null);
   const [checklistJobId, setChecklistJobId] = useState<string | null>(null);
   const [newChecklistText, setNewChecklistText] = useState('');
+  const [timeJobId, setTimeJobId] = useState<string | null>(null);
+  const [jobTimeEntries, setJobTimeEntries] = useState<Record<string, TimeEntry[]>>({});
+  const [crewList, setCrewList] = useState<CrewMember[]>([]);
+  const [clockInCrewId, setClockInCrewId] = useState<string>('');
+  const [clockingId, setClockingId] = useState<string | null>(null);
   const [jobReceipts, setJobReceipts] = useState<Record<string, JobReceipt[]>>({});
   const [jobQuotes, setJobQuotes]     = useState<Record<string, Quote | null>>({});
   const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
@@ -88,6 +95,8 @@ export default function JobsPage() {
     }
     const { data } = await supabase.from('jobs').select('*').eq('user_id', user.id).order('scheduled_date', { ascending: true });
     setJobs(data || []);
+    const { data: crew } = await supabase.from('crew_members').select('id, name, hourly_rate, rate_type').eq('user_id', user.id).order('name');
+    setCrewList(crew || []);
     setLoading(false);
   }
 
@@ -167,6 +176,10 @@ export default function JobsPage() {
         setJobQuotes(prev => ({ ...prev, [jobId]: q?.[0] || null }));
       }
     }
+    if (!jobTimeEntries[jobId]) {
+      const { data: t } = await supabase.from('time_entries').select('id, job_id, crew_id, clock_in, clock_out').eq('job_id', jobId).order('clock_in', { ascending: false });
+      setJobTimeEntries(prev => ({ ...prev, [jobId]: t || [] }));
+    }
   }
 
   // ─── Checklist ───────────────────────────────────────────
@@ -195,6 +208,47 @@ export default function JobsPage() {
     const updated = (job.checklist || []).filter(item => item.id !== itemId);
     setJobs(current => current.map(j => j.id === job.id ? { ...j, checklist: updated } : j));
     await supabase.from('jobs').update({ checklist: updated }).eq('id', job.id).eq('user_id', userId);
+  }
+
+  // ─── Time Tracking ───────────────────────────────────────
+  async function toggleTime(jobId: string) {
+    if (timeJobId === jobId) { setTimeJobId(null); return; }
+    setTimeJobId(jobId);
+    setClockInCrewId('');
+    if (!jobTimeEntries[jobId]) {
+      const { data } = await supabase.from('time_entries').select('id, job_id, crew_id, clock_in, clock_out').eq('job_id', jobId).order('clock_in', { ascending: false });
+      setJobTimeEntries(prev => ({ ...prev, [jobId]: data || [] }));
+    }
+  }
+
+  async function clockIn(jobId: string) {
+    setClockingId(jobId);
+    const { error } = await supabase.from('time_entries').insert({
+      user_id: userId, job_id: jobId, crew_id: clockInCrewId || null,
+    });
+    if (error) { flash('Could not clock in.'); setClockingId(null); return; }
+    const { data } = await supabase.from('time_entries').select('id, job_id, crew_id, clock_in, clock_out').eq('job_id', jobId).order('clock_in', { ascending: false });
+    setJobTimeEntries(prev => ({ ...prev, [jobId]: data || [] }));
+    setClockingId(null);
+  }
+
+  async function clockOut(jobId: string, entryId: string) {
+    setClockingId(jobId);
+    const { error } = await supabase.from('time_entries').update({ clock_out: new Date().toISOString() }).eq('id', entryId);
+    if (error) { flash('Could not clock out.'); setClockingId(null); return; }
+    const { data } = await supabase.from('time_entries').select('id, job_id, crew_id, clock_in, clock_out').eq('job_id', jobId).order('clock_in', { ascending: false });
+    setJobTimeEntries(prev => ({ ...prev, [jobId]: data || [] }));
+    setClockingId(null);
+  }
+
+  function entryHours(entry: TimeEntry): number {
+    const end = entry.clock_out ? new Date(entry.clock_out).getTime() : Date.now();
+    return (end - new Date(entry.clock_in).getTime()) / 3600000;
+  }
+
+  function crewName(crewId: string | null): string {
+    if (!crewId) return 'Unassigned';
+    return crewList.find(c => c.id === crewId)?.name || 'Unknown';
   }
 
   // ─── Lightbox ────────────────────────────────────────────
@@ -577,7 +631,7 @@ export default function JobsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      {['Job', 'Customer', 'Date', 'Status', 'Photos', 'Costing', 'Checklist', 'Actions'].map(h => (
+                      {['Job', 'Customer', 'Date', 'Status', 'Photos', 'Costing', 'Checklist', 'Time', 'Actions'].map(h => (
                         <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
@@ -591,6 +645,10 @@ export default function JobsPage() {
                       const isChecklist = checklistJobId === job.id;
                       const isExp  = expandedJobId === job.id;
                       const isCost = costingJobId  === job.id;
+                      const isTime = timeJobId === job.id;
+                      const timeEntries = jobTimeEntries[job.id] || [];
+                      const activeEntry = timeEntries.find(e => !e.clock_out);
+                      const totalHours = timeEntries.reduce((s, e) => s + entryHours(e), 0);
                       return (
                         <React.Fragment key={job.id}>
                           <tr style={{ borderBottom: (isExp || isCost) ? 'none' : '1px solid #f9fafb', background: (isExp || isCost) ? '#fafafa' : 'white' }}>
@@ -639,6 +697,13 @@ export default function JobsPage() {
                               </button>
                             </td>
                             <td style={{ padding: '13px 16px' }}>
+                              <button onClick={() => toggleTime(job.id)}
+                                style={{ padding: '5px 10px', background: activeEntry ? '#fef2f2' : isTime ? '#f0fdf4' : '#f3f4f6', border: `1px solid ${activeEntry ? '#fecaca' : isTime ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', color: activeEntry ? '#dc2626' : isTime ? '#16a34a' : '#374151', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                {activeEntry && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} />}
+                                {activeEntry ? 'Clocked In' : totalHours > 0 ? `${totalHours.toFixed(1)}h` : 'Time'}
+                              </button>
+                            </td>
+                            <td style={{ padding: '13px 16px' }}>
                               <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                                 {job.status === 'scheduled' && (
                                   <button onClick={() => updateStatus(job.id, 'in progress')} style={{ padding: '5px 9px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start</button>
@@ -658,7 +723,7 @@ export default function JobsPage() {
                           {/* Photo Gallery Row */}
                           {isExp && (
                             <tr style={{ borderBottom: '1px solid #f9fafb' }}>
-                              <td colSpan={8} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                              <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
                                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Photos & Notes</span>
@@ -724,19 +789,33 @@ export default function JobsPage() {
                             const spend    = receipts.reduce((s, r) => s + (r.amount || 0), 0);
                             const quoted   = quote?.subtotal ?? null;
                             const diff     = quoted != null ? spend - quoted : null;
+                            const timeForJob = jobTimeEntries[job.id] || [];
+                            const laborHours = timeForJob.reduce((s, e) => s + entryHours(e), 0);
+                            const laborCost = timeForJob.reduce((s, e) => {
+                              const member = e.crew_id ? crewList.find(c => c.id === e.crew_id) : null;
+                              // Fixed-rate crew aren't paid per hour, so their rate can't be multiplied by
+                              // tracked time — only hourly-rate crew contribute a dollar amount here.
+                              if (!member || member.rate_type !== 'hourly' || !member.hourly_rate) return s;
+                              return s + entryHours(e) * member.hourly_rate;
+                            }, 0);
                             return (
                               <tr style={{ borderBottom: '1px solid #f9fafb' }}>
-                                <td colSpan={8} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                                <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
                                   <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                       <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Costing</span>
                                       <a href="/receipts" style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', textDecoration: 'none' }}>+ Link receipts in Receipts page</a>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '14px' }}>
                                       <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px' }}>
                                         <p style={{ color: '#9ca3af', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Material Spend</p>
                                         <p style={{ color: '#111', fontSize: '18px', fontWeight: '800', margin: 0 }}>${spend.toFixed(2)}</p>
                                         <p style={{ color: '#9ca3af', fontSize: '11px', margin: '2px 0 0' }}>{receipts.length} receipt{receipts.length !== 1 ? 's' : ''}</p>
+                                      </div>
+                                      <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px' }}>
+                                        <p style={{ color: '#9ca3af', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Labor Cost</p>
+                                        <p style={{ color: '#111', fontSize: '18px', fontWeight: '800', margin: 0 }}>${laborCost.toFixed(2)}</p>
+                                        <p style={{ color: '#9ca3af', fontSize: '11px', margin: '2px 0 0' }}>{laborHours.toFixed(1)}h logged</p>
                                       </div>
                                       <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px' }}>
                                         <p style={{ color: '#9ca3af', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Quoted (subtotal)</p>
@@ -749,7 +828,7 @@ export default function JobsPage() {
                                           {diff != null ? `${diff > 0 ? '+' : ''}$${diff.toFixed(2)}` : '—'}
                                         </p>
                                         <p style={{ color: '#9ca3af', fontSize: '11px', margin: '2px 0 0' }}>
-                                          {diff != null && diff > 0 ? 'Over budget' : diff != null && diff < 0 ? 'Under budget' : 'Link quote to compare'}
+                                          {diff != null && diff > 0 ? 'Over budget (materials only)' : diff != null && diff < 0 ? 'Under budget (materials only)' : 'Link quote to compare'}
                                         </p>
                                       </div>
                                     </div>
@@ -787,7 +866,7 @@ export default function JobsPage() {
                           {/* Checklist Row */}
                           {isChecklist && (
                             <tr style={{ borderBottom: '1px solid #f9fafb' }}>
-                              <td colSpan={8} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                              <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
                                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Checklist</span>
@@ -827,6 +906,71 @@ export default function JobsPage() {
                                     />
                                     <button onClick={() => addChecklistItem(job)} style={{ padding: '8px 16px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Add</button>
                                   </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+
+                          {/* Time Tracking Row */}
+                          {isTime && (
+                            <tr style={{ borderBottom: '1px solid #f9fafb' }}>
+                              <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
+                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Time Tracking</span>
+                                    {totalHours > 0 && (
+                                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>{totalHours.toFixed(1)} total hours</span>
+                                    )}
+                                  </div>
+
+                                  {activeEntry ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px' }}>
+                                      <span style={{ fontSize: '13px', color: '#991b1b', fontWeight: '600' }}>
+                                        {crewName(activeEntry.crew_id)} clocked in since {new Date(activeEntry.clock_in).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })}
+                                      </span>
+                                      <button disabled={clockingId === job.id} onClick={() => clockOut(job.id, activeEntry.id)} style={{ padding: '7px 14px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', opacity: clockingId === job.id ? 0.6 : 1 }}>
+                                        Clock Out
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                                      {crewList.length > 0 && (
+                                        <select value={clockInCrewId} onChange={e => setClockInCrewId(e.target.value)} style={{ flex: 1, padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', color: '#111', background: '#f9fafb' }}>
+                                          <option value="">Unassigned (me)</option>
+                                          {crewList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        </select>
+                                      )}
+                                      <button disabled={clockingId === job.id} onClick={() => clockIn(job.id)} style={{ padding: '8px 16px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', opacity: clockingId === job.id ? 0.6 : 1, whiteSpace: 'nowrap' as const }}>
+                                        Clock In
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {timeEntries.length === 0 ? (
+                                    <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>No time logged for this job yet.</p>
+                                  ) : (
+                                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                        <thead>
+                                          <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                                            {['Who', 'Clock In', 'Clock Out', 'Hours'].map(h => (
+                                              <th key={h} style={{ padding: '8px 14px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{h}</th>
+                                            ))}
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {timeEntries.map((e, i) => (
+                                            <tr key={e.id} style={{ borderBottom: i < timeEntries.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                                              <td style={{ padding: '9px 14px', color: '#111', fontWeight: '500' }}>{crewName(e.crew_id)}</td>
+                                              <td style={{ padding: '9px 14px', color: '#6b7280' }}>{new Date(e.clock_in).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                                              <td style={{ padding: '9px 14px', color: '#6b7280' }}>{e.clock_out ? new Date(e.clock_out).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</td>
+                                              <td style={{ padding: '9px 14px', color: '#111', fontWeight: '700' }}>{entryHours(e).toFixed(1)}h</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>

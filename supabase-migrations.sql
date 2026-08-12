@@ -129,6 +129,26 @@ alter table jobs add column if not exists checklist jsonb default '[]';
 alter table invoices add column if not exists last_reminder_sent_at timestamp with time zone;
 
 -- -------------------------------------------------------
+-- Feature 15: Time tracking / clock-in-clock-out
+-- -------------------------------------------------------
+create table if not exists time_entries (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade,
+  job_id uuid references jobs on delete cascade,
+  crew_id uuid references crew_members on delete set null,
+  clock_in timestamp with time zone not null default timezone('utc'::text, now()),
+  clock_out timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+alter table time_entries enable row level security;
+create policy "Users can manage own time entries" on time_entries
+  for all using (auth.uid() = user_id);
+
+-- No crew_members schema change needed - it already has hourly_rate + rate_type
+-- (an earlier version of this migration mistakenly targeted a `crew` table that
+-- doesn't exist; the real table is `crew_members`, corrected before this shipped).
+
+-- -------------------------------------------------------
 -- Feature 13: Two-way texting for existing clients
 -- Separate from sms_leads (missed-call AI qualification bot).
 -- Contractor-initiated conversations with known customers, sent from
