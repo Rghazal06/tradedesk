@@ -203,6 +203,7 @@ export default function LandingPage() {
               { feature: 'Two-way client texting', sheets: false, jobber: true, td: true },
               { feature: 'Customizable job checklists', sheets: false, jobber: true, td: true },
               { feature: 'Time tracking + labor cost per job', sheets: false, jobber: true, td: true },
+              { feature: 'Recurring job scheduling', sheets: false, jobber: true, td: true },
               { feature: 'AI receipt scanning with line items', sheets: false, jobber: false, td: true },
             ].map((row, i) => (
               <div key={row.feature} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', borderTop: i === 0 ? 'none' : '1px solid #f3f4f6' }}>

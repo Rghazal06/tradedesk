@@ -23,6 +23,7 @@ interface Job {
   scheduled_date: string; scheduled_time?: string; estimated_hours?: number;
   status: string; notes: string; photos?: string[]; share_token?: string | null;
   checklist?: ChecklistItem[];
+  recurrence_type?: string | null; recurrence_end_date?: string | null; recurrence_parent_id?: string | null;
 }
 interface JobReceipt { id: string; merchant: string; amount: number; date: string; category: string; }
 interface Quote { subtotal: number; total: number; status: string; }
@@ -58,7 +59,7 @@ export default function JobsPage() {
   const [jobReceipts, setJobReceipts] = useState<Record<string, JobReceipt[]>>({});
   const [jobQuotes, setJobQuotes]     = useState<Record<string, Quote | null>>({});
   const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', scheduled_time: '', estimated_hours: '', notes: '' });
+  const [form, setForm] = useState({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', scheduled_time: '', estimated_hours: '', notes: '', recurrence_type: 'none', recurrence_end_date: '' });
 
   // Lightbox state
   const [lightbox, setLightbox]     = useState<{ jobId: string; idx: number } | null>(null);
@@ -114,10 +115,42 @@ export default function JobsPage() {
       estimated_hours: form.estimated_hours ? parseFloat(form.estimated_hours) : null,
       notes: form.notes,
       status: 'scheduled',
+      recurrence_type: form.recurrence_type === 'none' ? null : form.recurrence_type,
+      recurrence_end_date: form.recurrence_end_date || null,
     });
     if (error) flash('Error creating job.');
-    else { flash('Job created!'); setForm({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', scheduled_time: '', estimated_hours: '', notes: '' }); setShowForm(false); loadJobs(); }
+    else { flash('Job created!'); setForm({ title: '', customer_name: '', customer_phone: '', scheduled_date: '', scheduled_time: '', estimated_hours: '', notes: '', recurrence_type: 'none', recurrence_end_date: '' }); setShowForm(false); loadJobs(); }
     setSaving(false);
+  }
+
+  function nextOccurrenceDate(dateStr: string, recurrenceType: string): string | null {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (recurrenceType === 'weekly') d.setDate(d.getDate() + 7);
+    else if (recurrenceType === 'biweekly') d.setDate(d.getDate() + 14);
+    else if (recurrenceType === 'monthly') d.setMonth(d.getMonth() + 1);
+    else return null;
+    return d.toISOString().split('T')[0];
+  }
+
+  async function createNextOccurrence(job: Job) {
+    if (!job.recurrence_type || !job.scheduled_date) return;
+    const nextDate = nextOccurrenceDate(job.scheduled_date, job.recurrence_type);
+    if (!nextDate) return;
+    if (job.recurrence_end_date && nextDate > job.recurrence_end_date) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('jobs').insert({
+      user_id: user.id,
+      title: job.title, customer_name: job.customer_name, customer_phone: job.customer_phone,
+      scheduled_date: nextDate,
+      scheduled_time: job.scheduled_time || null,
+      estimated_hours: job.estimated_hours || null,
+      notes: '',
+      status: 'scheduled',
+      recurrence_type: job.recurrence_type,
+      recurrence_end_date: job.recurrence_end_date || null,
+      recurrence_parent_id: job.recurrence_parent_id || job.id,
+    });
   }
 
   async function updateStatus(id: string, status: string) {
@@ -125,8 +158,15 @@ export default function JobsPage() {
     loadJobs();
   }
 
+  async function stopRecurring(jobId: string) {
+    await supabase.from('jobs').update({ recurrence_type: null, recurrence_end_date: null }).eq('id', jobId);
+    flash('This job will no longer repeat.');
+    loadJobs();
+  }
+
   async function completeAndRequestReview(job: Job) {
     await updateStatus(job.id, 'completed');
+    if (job.recurrence_type) await createNextOccurrence(job);
     if (job.customer_phone) {
       const res = await fetch('/api/send-review-request', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -135,6 +175,7 @@ export default function JobsPage() {
       const d = await res.json();
       flash(d.success ? 'Job completed! Review request sent.' : 'Job completed. Could not send SMS.');
     } else { flash('Job completed!'); }
+    if (job.recurrence_type) loadJobs();
   }
 
   async function uploadPhoto(jobId: string, file: File) {
@@ -598,12 +639,34 @@ export default function JobsPage() {
                       style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' }} />
                   </div>
                 ))}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Repeat</label>
+                  <select value={form.recurrence_type} onChange={e => setForm({ ...form, recurrence_type: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' as const }}>
+                    <option value="none">Does not repeat</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Every 2 weeks</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                {form.recurrence_type !== 'none' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Repeat Until (optional)</label>
+                    <input type="date" value={form.recurrence_end_date} onChange={e => setForm({ ...form, recurrence_end_date: e.target.value })}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' }} />
+                  </div>
+                )}
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</label>
                   <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Any initial notes..."
                     style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', color: '#111', background: '#f9fafb', boxSizing: 'border-box' }} />
                 </div>
               </div>
+              {form.recurrence_type !== 'none' && (
+                <p style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280' }}>
+                  The next occurrence is created automatically when you mark a job in this series as completed.
+                </p>
+              )}
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                 <button onClick={saveJob} disabled={saving} style={{ padding: '10px 24px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
                   {saving ? 'Creating...' : 'Create Job'}
@@ -653,7 +716,14 @@ export default function JobsPage() {
                         <React.Fragment key={job.id}>
                           <tr style={{ borderBottom: (isExp || isCost) ? 'none' : '1px solid #f9fafb', background: (isExp || isCost) ? '#fafafa' : 'white' }}>
                             <td style={{ padding: '13px 16px', maxWidth: '180px' }}>
-                              <div style={{ fontWeight: '600', fontSize: '14px', color: '#111' }}>{job.title}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <span style={{ fontWeight: '600', fontSize: '14px', color: '#111' }}>{job.title}</span>
+                                {job.recurrence_type && (
+                                  <span title={`Repeats ${job.recurrence_type}`} style={{ display: 'inline-flex', color: '#9ca3af', flexShrink: 0 }}>
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 5.5V4a2.5 2.5 0 0 1 2.5-2.5h4M10 6.5V8A2.5 2.5 0 0 1 7.5 10.5h-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M4 1l-1.5 1.5L4 4M8 11l1.5-1.5L8 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                  </span>
+                                )}
+                              </div>
                               {job.notes && <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.notes.split('\n')[0]}</div>}
                             </td>
                             <td style={{ padding: '13px 16px' }}>
@@ -715,6 +785,9 @@ export default function JobsPage() {
                                   {generatingReportId === job.id ? '...' : 'Report'}
                                 </button>
                                 <button onClick={() => openShare(job)} style={{ padding: '5px 9px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>Share</button>
+                                {job.recurrence_type && (
+                                  <button onClick={() => stopRecurring(job.id)} style={{ padding: '5px 9px', background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>Stop Repeating</button>
+                                )}
                                 <button onClick={() => deleteJob(job.id)} style={{ padding: '5px 9px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>Delete</button>
                               </div>
                             </td>

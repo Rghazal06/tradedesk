@@ -149,6 +149,16 @@ create policy "Users can manage own time entries" on time_entries
 -- doesn't exist; the real table is `crew_members`, corrected before this shipped).
 
 -- -------------------------------------------------------
+-- Feature 16: Recurring job scheduling
+-- Next occurrence is generated when the current one is marked completed,
+-- not all upfront - avoids piling up future jobs for a relationship that
+-- might end anytime.
+-- -------------------------------------------------------
+alter table jobs add column if not exists recurrence_type text;
+alter table jobs add column if not exists recurrence_end_date date;
+alter table jobs add column if not exists recurrence_parent_id uuid references jobs on delete set null;
+
+-- -------------------------------------------------------
 -- Feature 13: Two-way texting for existing clients
 -- Separate from sms_leads (missed-call AI qualification bot).
 -- Contractor-initiated conversations with known customers, sent from
