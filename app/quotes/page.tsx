@@ -29,6 +29,8 @@ export default function QuotesPage() {
   const [convertingId, setConvertingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchConverting, setBatchConverting] = useState(false);
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -81,6 +83,51 @@ export default function QuotesPage() {
     router.push("/invoices");
   };
 
+  const toggleSelected = (id: string) => {
+    setSelectedIds(current => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(current => current.size === quotes.length ? new Set() : new Set(quotes.map(q => q.id)));
+  };
+
+  const handleBatchConvert = async () => {
+    setBatchConverting(true);
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const user = authData.user;
+    if (authError || !user) { setBatchConverting(false); router.push("/login"); return; }
+
+    const selectedQuotes = quotes.filter(q => selectedIds.has(q.id));
+    let succeeded = 0;
+    for (const quote of selectedQuotes) {
+      const { error } = await supabase.from("invoices").insert({
+        user_id: user.id,
+        customer_name: quote.customer_name ?? "",
+        customer_email: quote.customer_email,
+        customer_phone: quote.customer_phone,
+        job_description: quote.job_description,
+        line_items: quote.line_items,
+        subtotal: quote.subtotal ?? 0,
+        hst: quote.hst ?? 0,
+        total: quote.total ?? 0,
+        notes: quote.notes,
+        status: "unpaid",
+      });
+      if (!error) succeeded++;
+    }
+    setBatchConverting(false);
+    setSelectedIds(new Set());
+    if (succeeded === 0) { setErrorMessage('Could not create invoices. Please try again.'); return; }
+    if (succeeded < selectedQuotes.length) {
+      setErrorMessage(`Created ${succeeded} of ${selectedQuotes.length} invoices — some failed. Please check and retry those.`);
+    }
+    router.push("/invoices");
+  };
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Sidebar activePath="/quotes" />
@@ -116,6 +163,18 @@ export default function QuotesPage() {
             </div>
           )}
 
+          {selectedIds.size > 0 && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px 20px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: '10px' }}>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#15803d' }}>{selectedIds.size} quote{selectedIds.size !== 1 ? 's' : ''} selected</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setSelectedIds(new Set())} style={{ padding: '8px 14px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Clear</button>
+                <button disabled={batchConverting} onClick={() => void handleBatchConvert()} style={{ padding: '8px 16px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', opacity: batchConverting ? 0.7 : 1 }}>
+                  {batchConverting ? 'Creating invoices...' : `Create ${selectedIds.size} Invoice${selectedIds.size !== 1 ? 's' : ''}`}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
             <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
               <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>All Quotes</h2>
@@ -139,6 +198,9 @@ export default function QuotesPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        <th style={{ padding: '12px 0 12px 24px', width: '32px' }}>
+                          <input type="checkbox" checked={selectedIds.size === quotes.length && quotes.length > 0} onChange={toggleSelectAll} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                        </th>
                         {['Customer', 'Total', 'Status', 'Date', 'Actions'].map(h => (
                           <th key={h} style={{ padding: '12px 24px', textAlign: 'left', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{h}</th>
                         ))}
@@ -146,7 +208,10 @@ export default function QuotesPage() {
                     </thead>
                     <tbody>
                       {quotes.map(quote => (
-                        <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                        <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb', background: selectedIds.has(quote.id) ? '#f0fdf4' : 'transparent' }}>
+                          <td style={{ padding: '14px 0 14px 24px' }}>
+                            <input type="checkbox" checked={selectedIds.has(quote.id)} onChange={() => toggleSelected(quote.id)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                          </td>
                           <td style={{ padding: '14px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{quote.customer_name || '—'}</td>
                           <td style={{ padding: '14px 24px', color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(quote.total)}</td>
                           <td style={{ padding: '14px 24px' }}>
@@ -173,11 +238,14 @@ export default function QuotesPage() {
                 {/* Mobile cards */}
                 <div className="q-mobile-cards" style={{ display: 'none', flexDirection: 'column', gap: '0' }}>
                   {quotes.map((quote, i) => (
-                    <div key={quote.id} style={{ padding: '16px 20px', borderBottom: i < quotes.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                    <div key={quote.id} style={{ padding: '16px 20px', borderBottom: i < quotes.length - 1 ? '1px solid #f3f4f6' : 'none', background: selectedIds.has(quote.id) ? '#f0fdf4' : 'transparent' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <div>
-                          <p style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 3px' }}>{quote.customer_name || '—'}</p>
-                          <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{formatDate(quote.created_at)}</p>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <input type="checkbox" checked={selectedIds.has(quote.id)} onChange={() => toggleSelected(quote.id)} style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '3px' }} />
+                          <div>
+                            <p style={{ fontSize: '16px', fontWeight: '700', color: '#111', margin: '0 0 3px' }}>{quote.customer_name || '—'}</p>
+                            <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{formatDate(quote.created_at)}</p>
+                          </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <p style={{ fontSize: '20px', fontWeight: '800', color: '#16a34a', margin: '0 0 4px', letterSpacing: '-0.5px' }}>{formatCurrency(quote.total)}</p>
