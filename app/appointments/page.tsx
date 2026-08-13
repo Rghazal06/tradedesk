@@ -42,6 +42,12 @@ export default function AppointmentsPage() {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showForm, setShowForm] = useState(false);
+  const [viewedMonth, setViewedMonth] = useState(() => { const d = new Date(); d.setDate(1); return d; });
+  const [draggedAptId, setDraggedAptId] = useState<string | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [moveMessage, setMoveMessage] = useState('');
+  const [pendingMove, setPendingMove] = useState<{ id: string; customerName: string; fromDate: string; toDate: string } | null>(null);
+  const [confirmingMove, setConfirmingMove] = useState(false);
   const [form, setForm] = useState({
     customer_name: '',
     customer_phone: '',
@@ -126,18 +132,40 @@ export default function AppointmentsPage() {
     loadAppointments();
   }
 
+  function requestMoveAppointment(id: string, newDate: string) {
+    const apt = appointments.find(a => a.id === id);
+    if (!apt || apt.scheduled_date === newDate) return;
+    setPendingMove({ id, customerName: apt.customer_name, fromDate: apt.scheduled_date, toDate: newDate });
+  }
+
+  async function confirmMoveAppointment() {
+    if (!pendingMove) return;
+    setConfirmingMove(true);
+    const { id, customerName, toDate } = pendingMove;
+    const { error } = await supabase.from('appointments').update({ scheduled_date: toDate }).eq('id', id);
+    setConfirmingMove(false);
+    setPendingMove(null);
+    if (error) { setMoveMessage('Could not reschedule — please try again.'); setTimeout(() => setMoveMessage(''), 3000); return; }
+    setAppointments(current => current.map(a => a.id === id ? { ...a, scheduled_date: toDate } : a));
+    setMoveMessage(`Moved ${customerName}'s appointment to ${new Date(toDate + 'T00:00:00').toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}.`);
+    setTimeout(() => setMoveMessage(''), 4000);
+  }
+
   const todayAppointments = appointments.filter(a => a.scheduled_date === new Date().toISOString().split('T')[0]);
   const upcomingAppointments = appointments.filter(a => a.scheduled_date > new Date().toISOString().split('T')[0]);
   const selectedDateAppointments = appointments.filter(a => a.scheduled_date === selectedDate);
 
   const getDaysInMonth = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    const year = viewedMonth.getFullYear();
+    const month = viewedMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDay = new Date(year, month, 1).getDay();
     return { daysInMonth, firstDay, year, month };
   };
+
+  function changeMonth(delta: number) {
+    setViewedMonth(current => { const d = new Date(current); d.setMonth(d.getMonth() + delta); return d; });
+  }
 
   const { daysInMonth, firstDay, year, month } = getDaysInMonth();
   const monthName = new Date(year, month).toLocaleString('default', { month: 'long' });
@@ -291,8 +319,20 @@ export default function AppointmentsPage() {
           ) : (
             /* Calendar View */
             <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden' }}>
+              {moveMessage && (
+                <div style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', padding: '10px 24px', color: '#15803d', fontSize: '13px' }}>{moveMessage}</div>
+              )}
               <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111', margin: 0 }}>{monthName} {year}</h2>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button onClick={() => changeMonth(-1)} aria-label="Previous month" style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button onClick={() => { const d = new Date(); d.setDate(1); setViewedMonth(d); }} style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Today</button>
+                  <button onClick={() => changeMonth(1)} aria-label="Next month" style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #e5e7eb' }}>
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -309,13 +349,27 @@ export default function AppointmentsPage() {
                   const dayApts = getAppointmentsForDay(day);
                   const isToday = dateStr === new Date().toISOString().split('T')[0];
                   const isSelected = dateStr === selectedDate;
+                  const isDragOver = dragOverDate === dateStr;
                   return (
-                    <div key={day} onClick={() => setSelectedDate(dateStr)} style={{
-                      height: '100px', borderRight: '1px solid #f3f4f6', borderBottom: '1px solid #f3f4f6',
-                      padding: '8px', cursor: 'pointer',
-                      background: isSelected ? '#f0fdf4' : 'white',
-                      transition: 'background 0.1s',
-                    }}>
+                    <div
+                      key={day}
+                      onClick={() => setSelectedDate(dateStr)}
+                      onDragOver={e => { e.preventDefault(); if (dragOverDate !== dateStr) setDragOverDate(dateStr); }}
+                      onDragLeave={() => setDragOverDate(current => current === dateStr ? null : current)}
+                      onDrop={e => {
+                        e.preventDefault();
+                        setDragOverDate(null);
+                        const id = e.dataTransfer.getData('text/plain') || draggedAptId;
+                        if (id) requestMoveAppointment(id, dateStr);
+                        setDraggedAptId(null);
+                      }}
+                      style={{
+                        height: '100px', borderRight: '1px solid #f3f4f6', borderBottom: '1px solid #f3f4f6',
+                        padding: '8px', cursor: 'pointer',
+                        background: isDragOver ? '#eff6ff' : isSelected ? '#f0fdf4' : 'white',
+                        boxShadow: isDragOver ? 'inset 0 0 0 2px #3b82f6' : 'none',
+                        transition: 'background 0.1s',
+                      }}>
                       <div style={{
                         width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: isToday ? '#16a34a' : 'transparent',
@@ -323,7 +377,14 @@ export default function AppointmentsPage() {
                         fontSize: '13px', fontWeight: isToday ? '700' : '400', marginBottom: '4px',
                       }}>{day}</div>
                       {dayApts.slice(0, 2).map(apt => (
-                        <div key={apt.id} style={{ fontSize: '10px', background: '#f0fdf4', color: '#15803d', borderRadius: '4px', padding: '2px 6px', marginBottom: '2px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                        <div
+                          key={apt.id}
+                          draggable
+                          onDragStart={e => { e.dataTransfer.setData('text/plain', apt.id); e.dataTransfer.effectAllowed = 'move'; setDraggedAptId(apt.id); }}
+                          onDragEnd={() => { setDraggedAptId(null); setDragOverDate(null); }}
+                          onClick={e => e.stopPropagation()}
+                          title="Drag to reschedule"
+                          style={{ fontSize: '10px', background: '#f0fdf4', color: '#15803d', borderRadius: '4px', padding: '2px 6px', marginBottom: '2px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'grab', opacity: draggedAptId === apt.id ? 0.4 : 1 }}>
                           {apt.scheduled_time?.slice(0, 5)} {apt.customer_name}
                         </div>
                       ))}
@@ -347,6 +408,38 @@ export default function AppointmentsPage() {
           )}
         </div>
       </div>
+
+      {/* Confirm reschedule modal — a real customer appointment shouldn't move from
+          a stray drag without an explicit, hard-to-miss confirmation. */}
+      {pendingMove && (
+        <div
+          onClick={() => setPendingMove(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '420px', padding: '28px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+          >
+            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" rx="2" stroke="#3b82f6" strokeWidth="1.6"/><line x1="2" y1="8" x2="18" y2="8" stroke="#3b82f6" strokeWidth="1.6"/><path d="M7 12l2 2 4-4" stroke="#3b82f6" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#111', margin: '0 0 8px' }}>Reschedule this appointment?</h2>
+            <p style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, margin: '0 0 24px' }}>
+              Move <strong>{pendingMove.customerName}</strong>'s appointment from{' '}
+              <strong>{new Date(pendingMove.fromDate + 'T00:00:00').toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}</strong> to{' '}
+              <strong>{new Date(pendingMove.toDate + 'T00:00:00').toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>?
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setPendingMove(null)} style={{ flex: 1, padding: '12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button disabled={confirmingMove} onClick={() => void confirmMoveAppointment()} style={{ flex: 1, padding: '12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', opacity: confirmingMove ? 0.7 : 1 }}>
+                {confirmingMove ? 'Moving...' : 'Yes, Reschedule'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
