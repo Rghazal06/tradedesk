@@ -133,8 +133,8 @@ export default function InvoicesPage() {
             </div>
           )}
 
-          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #e5e7eb' }}>
               <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>All Invoices</h2>
             </div>
 
@@ -165,7 +165,10 @@ export default function InvoicesPage() {
                       {invoices.map(invoice => {
                         const isPaid = (invoice.status || '').toLowerCase() === 'paid';
                         return (
-                          <tr key={invoice.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                          <tr key={invoice.id}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#fafafa'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                            style={{ borderBottom: '1px solid #f9fafb', transition: 'background 0.1s' }}>
                             <td style={{ padding: '16px 24px', color: '#111', fontSize: '14px', fontWeight: '500' }}>{invoice.customer_name || '—'}</td>
                             <td style={{ padding: '16px 24px' }}>
                               <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: '700' }}>{formatCurrency(invoice.total)}</span>
