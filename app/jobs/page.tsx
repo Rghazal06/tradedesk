@@ -677,7 +677,7 @@ export default function JobsPage() {
           )}
 
           {/* Jobs table */}
-          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
               <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>All Jobs</h2>
             </div>
@@ -714,7 +714,11 @@ export default function JobsPage() {
                       const totalHours = timeEntries.reduce((s, e) => s + entryHours(e), 0);
                       return (
                         <React.Fragment key={job.id}>
-                          <tr style={{ borderBottom: (isExp || isCost) ? 'none' : '1px solid #f9fafb', background: (isExp || isCost) ? '#fafafa' : 'white' }}>
+                          <tr
+                            style={{ borderBottom: (isExp || isCost) ? 'none' : '1px solid #f9fafb', background: (isExp || isCost) ? '#fafafa' : 'white', transition: 'background 0.1s' }}
+                            onMouseEnter={e => { if (!isExp && !isCost) e.currentTarget.style.background = '#fafafa'; }}
+                            onMouseLeave={e => { if (!isExp && !isCost) e.currentTarget.style.background = 'white'; }}
+                          >
                             <td style={{ padding: '13px 16px', maxWidth: '180px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <span style={{ fontWeight: '600', fontSize: '14px', color: '#111' }}>{job.title}</span>
@@ -797,7 +801,7 @@ export default function JobsPage() {
                           {isExp && (
                             <tr style={{ borderBottom: '1px solid #f9fafb' }}>
                               <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
-                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Photos & Notes</span>
                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -874,7 +878,7 @@ export default function JobsPage() {
                             return (
                               <tr style={{ borderBottom: '1px solid #f9fafb' }}>
                                 <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
-                                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                  <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                       <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Costing</span>
                                       <a href="/receipts" style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', textDecoration: 'none' }}>+ Link receipts in Receipts page</a>
@@ -940,7 +944,7 @@ export default function JobsPage() {
                           {isChecklist && (
                             <tr style={{ borderBottom: '1px solid #f9fafb' }}>
                               <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
-                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Job Checklist</span>
                                     {checklist.length > 0 && (
@@ -988,7 +992,7 @@ export default function JobsPage() {
                           {isTime && (
                             <tr style={{ borderBottom: '1px solid #f9fafb' }}>
                               <td colSpan={9} style={{ padding: '0 16px 16px', background: '#fafafa' }}>
-                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px' }}>
+                                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Time Tracking</span>
                                     {totalHours > 0 && (
