@@ -164,7 +164,7 @@ export default function QuotesPage() {
           )}
 
           {selectedIds.size > 0 && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px 20px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: '10px' }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px 20px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <span style={{ fontSize: '13px', fontWeight: '600', color: '#15803d' }}>{selectedIds.size} quote{selectedIds.size !== 1 ? 's' : ''} selected</span>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => setSelectedIds(new Set())} style={{ padding: '8px 14px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Clear</button>
@@ -175,8 +175,8 @@ export default function QuotesPage() {
             </div>
           )}
 
-          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #e5e7eb' }}>
               <h2 style={{ color: '#111', fontSize: '15px', fontWeight: '700', margin: 0 }}>All Quotes</h2>
             </div>
 
@@ -208,7 +208,10 @@ export default function QuotesPage() {
                     </thead>
                     <tbody>
                       {quotes.map(quote => (
-                        <tr key={quote.id} style={{ borderBottom: '1px solid #f9fafb', background: selectedIds.has(quote.id) ? '#f0fdf4' : 'transparent' }}>
+                        <tr key={quote.id}
+                          onMouseEnter={e => { if (!selectedIds.has(quote.id)) e.currentTarget.style.background = '#fafafa'; }}
+                          onMouseLeave={e => { if (!selectedIds.has(quote.id)) e.currentTarget.style.background = 'transparent'; }}
+                          style={{ borderBottom: '1px solid #f9fafb', background: selectedIds.has(quote.id) ? '#f0fdf4' : 'transparent', transition: 'background 0.1s' }}>
                           <td style={{ padding: '14px 0 14px 24px' }}>
                             <input type="checkbox" checked={selectedIds.has(quote.id)} onChange={() => toggleSelected(quote.id)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
                           </td>
