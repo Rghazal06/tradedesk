@@ -119,7 +119,7 @@ Every table has RLS enabled. Service role bypasses RLS — always filter by `use
 | `crew_members` | id, user_id, name, trade, email, phone, wsib_number, wsib_expiry, rate_type ('hourly'\|'fixed'), hourly_rate, status, notes, created_at — corrected 2026-08-12: table is `crew_members`, not `crew` as previously (incorrectly) documented |
 | `time_entries` | id, user_id, job_id, crew_id (nullable, references crew_members), clock_in, clock_out (nullable while active), created_at |
 | `pricebook_items` | id, user_id, name, description, unit_price, unit, category, created_at |
-| `coi_entries` | id, user_id, provider, policy_number, coverage_type, expiry_date, document_url, created_at |
+| `insurance_docs` | id, user_id, doc_type, insurer, policy_number, expiry_date, coverage_amount, file_url, subcontractor_name, notes, created_at — corrected 2026-08-18: previously (incorrectly) documented as `coi_entries` with different columns; that table never existed |
 | `leads` | id, user_id, phone, name, message, status, source, created_at |
 | `sms_conversations` | id, user_id, customer_phone, customer_name, messages (jsonb, `{direction:'inbound'\|'outbound',body,ts}[]`), last_message_at, created_at — unique on (user_id, customer_phone). Two-way texting with known clients, separate from `sms_leads` (missed-call AI bot). |
 | `onboarding_emails` | id, user_id, email_number, sent_at, created_at |
@@ -159,7 +159,7 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 - `/clients` — Client CRM
 - `/assistant` — AI chat assistant (rate limited)
 - `/profit` — AI profit analyzer (rate limited)
-- `/coi` — Certificate of Insurance tracker
+- `/insurance` — Insurance/COI tracker (own policies + subcontractor COIs), table `insurance_docs`. Corrected 2026-08-18: previously (incorrectly) documented as `/coi`; that route never existed.
 - `/import` — Data import wizard
 - `/leads` — AI SMS missed-call leads inbox
 - `/settings` — Profile, booking config, subscription, referral code
@@ -200,6 +200,7 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
 - `GET /api/cron/wsib-reminders` — Daily at 9am
 - `GET /api/cron/onboarding` — Daily at 10am, sends 5-email onboarding sequence
 - `GET /api/cron/clearance-reminder` — Daily at 9am
+- `GET /api/cron/insurance-reminders` — Daily at 9am. Warns a contractor 30 days before an `insurance_docs` policy expires — covers both their own policies and subcontractor COIs on file. Uses the same exact `[today+30, today+31)` window pattern as `clearance-reminder` (a policy only ever falls in the window once, so no tracking column is needed). Added 2026-08-18.
 
 ---
 
@@ -261,7 +262,8 @@ HST: always calculated at 13%. `subtotal * 0.13 = hst`, `subtotal + hst = total`
     { "path": "/api/cron/appointment-reminders", "schedule": "0 8 * * *" },
     { "path": "/api/cron/wsib-reminders", "schedule": "0 9 * * *" },
     { "path": "/api/cron/onboarding", "schedule": "0 10 * * *" },
-    { "path": "/api/cron/clearance-reminder", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/clearance-reminder", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/insurance-reminders", "schedule": "0 9 * * *" }
   ]
 }
 ```
