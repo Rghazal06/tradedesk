@@ -159,12 +159,12 @@ export default function ClientsPage() {
   const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f5f5f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <style>{`
         @media (max-width: 768px) {
           .cl-split { flex-direction: column !important; }
           .cl-list { width: 100% !important; max-height: 50vh !important; }
-          .cl-detail { flex: 1 !important; }
+          .cl-detail { flex: 1 !important; min-height: 0 !important; }
         }
       `}</style>
       <Sidebar activePath="/clients" />
@@ -172,7 +172,7 @@ export default function ClientsPage() {
       
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
         <div className="td-topbar" style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111', margin: 0 }}>Clients</h1>
@@ -186,7 +186,7 @@ export default function ClientsPage() {
           />
         </div>
 
-        <div className="cl-split" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="cl-split" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
           {/* Client List */}
           <div className="cl-list" style={{ width: selected ? '380px' : '100%', borderRight: selected ? '1px solid #e5e7eb' : 'none', overflowY: 'auto', padding: '24px' }}>
@@ -232,7 +232,7 @@ export default function ClientsPage() {
 
           {/* Client Detail */}
           {selected && (
-            <div className="cl-detail" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+            <div key={selected.name} className="cl-detail" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ width: '56px', height: '56px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '800', color: '#16a34a' }}>
