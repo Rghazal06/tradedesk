@@ -552,7 +552,12 @@ export default function LandingPage() {
 
         <div className="td-footer-inner" style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '24px', borderTop: '1px solid #1f2937', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '12px' }}>
           <p style={{ color: '#4b5563', fontSize: '12px', margin: 0 }}>© 2026 TradeDesk. All rights reserved.</p>
-          <p style={{ color: '#4b5563', fontSize: '12px', margin: 0 }}>Made in Ontario, for Ontario.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <a href="https://www.instagram.com/mytradedesk_" target="_blank" rel="noreferrer" aria-label="TradeDesk on Instagram" style={{ display: 'flex', alignItems: 'center', color: '#6b7280' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.6"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.6"/><circle cx="17.4" cy="6.6" r="1.2" fill="currentColor"/></svg>
+            </a>
+            <p style={{ color: '#4b5563', fontSize: '12px', margin: 0 }}>Made in Ontario, for Ontario.</p>
+          </div>
         </div>
       </footer>
 
