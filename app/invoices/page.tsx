@@ -232,10 +232,20 @@ export default function InvoicesPage() {
                           {!isPaid && <>
                             <button disabled={markingPaidId === invoice.id} onClick={() => void handleMarkPaid(invoice.id)} style={{ padding: '12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', minHeight: '52px', opacity: markingPaidId === invoice.id ? 0.6 : 1, gridColumn: 'span 2' }}>{markingPaidId === invoice.id ? 'Updating...' : 'Mark as Paid'}</button>
                             <button disabled={paymentLinkLoadingId === invoice.id} onClick={() => void handleSendPaymentLink(invoice)} style={{ padding: '12px', background: '#faf5ff', color: '#7c3aed', border: '1px solid #ddd6fe', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: paymentLinkLoadingId === invoice.id ? 0.6 : 1 }}>{paymentLinkLoadingId === invoice.id ? 'Generating...' : 'Pay Link'}</button>
+                            <button onClick={async () => { const res = await fetch('/api/send-invoice-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerEmail: invoice.customer_email, customerName: invoice.customer_name, invoiceTotal: invoice.total?.toFixed(2), invoiceId: invoice.id, contractorName: 'TradeDesk Contractor', contractorPhone: '', paymentLink: getPayLink(invoice) }) }); const data = await res.json(); if (data.success) { setCopyToast('Reminder sent to ' + invoice.customer_name); setTimeout(() => setCopyToast(null), 3000); } else setErrorMessage('Something went wrong. Please try again.'); }} style={{ padding: '12px', background: '#fefce8', color: '#854d0e', border: '1px solid #fde047', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px' }}>Remind</button>
                             <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === invoice.id ? 0.5 : 1 }}>Delete</button>
                           </>}
                           {isPaid && <button disabled={deletingId === invoice.id} onClick={() => void handleDeleteInvoice(invoice.id)} style={{ padding: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', minHeight: '48px', opacity: deletingId === invoice.id ? 0.5 : 1, gridColumn: 'span 2' }}>Delete</button>}
                         </div>
+                        {!isPaid && invoice.payment_token && (
+                          <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', marginTop: '8px' }}>
+                            <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '0.5px', margin: '0 0 6px' }}>Pay Link</p>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <input readOnly value={getPayLink(invoice)} style={{ flex: 1, padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', color: '#374151', background: 'white', minWidth: 0 }} />
+                              <button onClick={() => void handleCopyPaymentLink(getPayLink(invoice))} style={{ padding: '8px 14px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' as const, minHeight: '36px' }}>Copy</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

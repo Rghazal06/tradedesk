@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
@@ -153,6 +153,19 @@ const Icon: Record<string, () => React.JSX.Element> = {
       <path d="M7.5 1v1.5M7.5 12.5V14M14 7.5h-1.5M2.5 7.5H1M12 3l-1 1M4 11l-1 1M12 12l-1-1M4 4l-1-1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   ),
+  more: () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="3" cy="7.5" r="1.3" fill="currentColor"/>
+      <circle cx="7.5" cy="7.5" r="1.3" fill="currentColor"/>
+      <circle cx="12" cy="7.5" r="1.3" fill="currentColor"/>
+    </svg>
+  ),
+  close: () => (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <line x1="2" y1="2" x2="12" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="12" y1="2" x2="2" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  ),
   signout: () => (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
       <path d="M5 2H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
@@ -200,11 +213,16 @@ const BOTTOM_NAV_ITEMS = [
   { label: 'Jobs', href: '/jobs', icon: 'job' },
   { label: 'Calendar', href: '/appointments', icon: 'calendar' },
   { label: 'Clients', href: '/clients', icon: 'clients' },
-  { label: 'Settings', href: '/settings', icon: 'settings' },
 ];
+
+// Every section, for the mobile "More" sheet — everything not already pinned in BOTTOM_NAV_ITEMS.
+const MORE_SHEET_ITEMS = NAV_GROUPS.flatMap(g => g.items).filter(
+  item => !BOTTOM_NAV_ITEMS.some(b => b.href === item.href)
+);
 
 export default function Sidebar({ activePath }: { activePath: string }) {
   const router = useRouter();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   function active(href: string) {
     if (href === '/dashboard') return activePath === '/dashboard';
@@ -281,7 +299,59 @@ export default function Sidebar({ activePath }: { activePath: string }) {
           </a>
         );
       })}
+      {(() => {
+        const isMoreActive = MORE_SHEET_ITEMS.some(item => active(item.href));
+        return (
+          <button
+            onClick={() => setMoreOpen(true)}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: isMoreActive ? '#16a34a' : '#8faac4', background: 'transparent', borderTop: `2px solid ${isMoreActive ? '#16a34a' : 'transparent'}`, padding: '8px 0' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', color: isMoreActive ? '#16a34a' : '#8faac4' }}>
+              <Icon.more />
+            </span>
+            <span style={{ fontSize: '10px', fontWeight: isMoreActive ? '700' : '500', letterSpacing: '0.1px' }}>
+              More
+            </span>
+          </button>
+        );
+      })()}
     </div>
+
+    {/* Mobile "More" overflow sheet */}
+    {moreOpen && (
+      <>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200 }} onClick={() => setMoreOpen(false)} />
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 201, background: '#141c2e', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', maxHeight: '75vh', overflowY: 'auto', padding: '8px 8px calc(env(safe-area-inset-bottom, 0px) + 12px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 10px 6px' }}>
+            <span style={{ color: '#f0f4ff', fontWeight: '700', fontSize: '14px' }}>More</span>
+            <button onClick={() => setMoreOpen(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8faac4', cursor: 'pointer' }}>
+              <Icon.close />
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '4px 6px 10px' }}>
+            {MORE_SHEET_ITEMS.map(item => {
+              const isActive = active(item.href);
+              const IconComp = Icon[item.icon];
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMoreOpen(false)}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '14px 4px', borderRadius: '10px', textDecoration: 'none', textAlign: 'center', color: isActive ? '#f0f4ff' : '#8faac4', background: isActive ? 'rgba(22,163,74,0.15)' : 'rgba(255,255,255,0.04)' }}
+                >
+                  <span style={{ color: isActive ? '#16a34a' : '#8faac4', display: 'flex', alignItems: 'center' }}>
+                    {IconComp && <IconComp />}
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: isActive ? '700' : '500', lineHeight: 1.2 }}>
+                    {item.label}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </>
+    )}
     </>
   );
 }
