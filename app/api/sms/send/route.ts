@@ -58,7 +58,14 @@ export async function POST(req: NextRequest) {
     });
 
     if (!twilioRes.ok) {
-      return NextResponse.json({ error: 'Failed to send message.' }, { status: 502 });
+      const twilioError = await twilioRes.json().catch(() => null);
+      console.error('sms/send twilio error:', twilioError);
+      // Trial Twilio accounts can only text numbers verified in the Twilio Console —
+      // this is the most common real-world failure and the generic message gave no clue why.
+      if (twilioError?.code === 21608) {
+        return NextResponse.json({ error: 'Your Twilio account is still in trial mode, which can only text verified numbers. Add a payment method in the Twilio Console to upgrade and text real clients.' }, { status: 502 });
+      }
+      return NextResponse.json({ error: 'Failed to send message. Double-check your Twilio number in Settings.' }, { status: 502 });
     }
 
     const { data: existing, error: lookupError } = await supabase
